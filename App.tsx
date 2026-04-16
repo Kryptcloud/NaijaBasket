@@ -1470,16 +1470,16 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
           {["shop", "orders"].map(p => (
             <button key={p} onClick={() => { setPage(p); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: page === p ? V.primary : V.textMuted, fontWeight: page === p ? 600 : 400, textTransform: "capitalize" }}>{p === "orders" ? "My Orders" : "Shop"}</button>
           ))}
-          {isUserFullyVerified ? (
+          {currentUser ? (
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" as const }}>
-              <div onClick={() => { setShowReferralModal(true); setMobileMenuOpen(false); }} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 8, padding: "4px 10px" }}>
+              {isUserFullyVerified && <div onClick={() => { setShowReferralModal(true); setMobileMenuOpen(false); }} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 8, padding: "4px 10px" }}>
                 <span style={{ fontSize: 13 }}>⭐</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: V.primary }}>{userPoints}</span>
                 <span style={{ fontSize: 10, color: V.textMuted }}>pts</span>
-              </div>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 700 }}>{currentUser?.name?.charAt(0).toUpperCase()}</div>
+              </div>}
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 700 }}>{currentUser.name?.charAt(0).toUpperCase()}</div>
               <div style={{ fontSize: 12, lineHeight: 1.2 }}>
-                <div style={{ fontWeight: 600, color: V.text }}>{currentUser?.name?.split(" ")[0]}</div>
+                <div style={{ fontWeight: 600, color: V.text }}>{currentUser.name?.split(" ")[0]}</div>
                 <button onClick={handleUserLogout} style={{ background: "none", border: "none", fontSize: 10, color: V.textMuted, cursor: "pointer", padding: 0 }}>Sign out</button>
               </div>
             </div>
@@ -1499,16 +1499,16 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
             {["shop", "orders"].map(p => (
               <button key={p} onClick={() => { setPage(p); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", borderRadius: 10, padding: "12px 16px", cursor: "pointer", fontSize: 15, color: page === p ? V.primary : V.textMuted, fontWeight: page === p ? 600 : 400, textTransform: "capitalize", width: "100%", textAlign: "left" }}>{p === "orders" ? "📦 My Orders" : "🛒 Shop"}</button>
             ))}
-            {isUserFullyVerified ? (
+            {currentUser ? (
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", flexWrap: "wrap" as const }}>
-                <div onClick={() => { setShowReferralModal(true); setMobileMenuOpen(false); }} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 8, padding: "4px 10px" }}>
+                {isUserFullyVerified && <div onClick={() => { setShowReferralModal(true); setMobileMenuOpen(false); }} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 8, padding: "4px 10px" }}>
                   <span style={{ fontSize: 13 }}>⭐</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: V.primary }}>{userPoints}</span>
                   <span style={{ fontSize: 10, color: V.textMuted }}>pts</span>
-                </div>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 700 }}>{currentUser?.name?.charAt(0).toUpperCase()}</div>
+                </div>}
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 700 }}>{currentUser.name?.charAt(0).toUpperCase()}</div>
                 <div style={{ fontSize: 13, lineHeight: 1.2 }}>
-                  <div style={{ fontWeight: 600, color: V.text }}>{currentUser?.name?.split(" ")[0]}</div>
+                  <div style={{ fontWeight: 600, color: V.text }}>{currentUser.name?.split(" ")[0]}</div>
                   <button onClick={() => { handleUserLogout(); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", fontSize: 11, color: V.textMuted, cursor: "pointer", padding: 0 }}>Sign out</button>
                 </div>
               </div>
