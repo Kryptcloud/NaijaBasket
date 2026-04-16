@@ -1435,23 +1435,10 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
         /* === Mobile Responsive === */
         .nb-nav-links { display: flex; align-items: center; gap: 16px; }
         .nb-hamburger { display: none; background: none; border: 1px solid var(--border-primary); width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 18px; color: var(--text-primary); align-items: center; justify-content: center; }
-        .nb-mobile-overlay { display: none; }
 
         @media (max-width: 768px) {
           .nb-hamburger { display: flex !important; }
-          .nb-nav-links {
-            display: none !important;
-            position: fixed; top: 64px; left: 0; right: 0; bottom: 0;
-            background: var(--bg-secondary); z-index: 100;
-            flex-direction: column; align-items: stretch; gap: 0;
-            padding: 16px; overflow-y: auto;
-            border-top: 1px solid var(--border-primary);
-            animation: slideUp 0.25s ease;
-          }
-          .nb-nav-links.nb-open { display: flex !important; }
-          .nb-nav-links button, .nb-nav-links > div { width: 100%; text-align: left; padding: 12px 16px !important; border-radius: 10px !important; font-size: 15px !important; }
-          .nb-nav-links > div { padding: 12px 16px; }
-          .nb-mobile-overlay.nb-open { display: block; position: fixed; top: 64px; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 99; }
+          .nb-nav-links { display: none !important; }
           .nb-cash-flow { grid-template-columns: 1fr !important; }
           .nb-pay-grid { grid-template-columns: 1fr !important; }
           .nb-sales-table { min-width: 700px; }
@@ -1507,18 +1494,14 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
           </div>
           <button className="nb-hamburger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ display: "none" }}>{mobileMenuOpen ? "✕" : "☰"}</button>
         </div>
-        {/* Mobile overlay */}
-        <div className={`nb-mobile-overlay${mobileMenuOpen ? " nb-open" : ""}`} onClick={() => setMobileMenuOpen(false)} />
-        {/* Nav links - hidden on mobile until hamburger toggled */}
-        <div className={`nb-nav-links${mobileMenuOpen ? " nb-open" : ""}`}>
+        {/* Desktop nav links (inline in nav bar) */}
+        <div className="nb-nav-links">
           <button onClick={() => setDarkMode(!darkMode)} style={{ background: "none", border: `1px solid ${V.border}`, width: 36, height: 36, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: V.text }}>{darkMode ? "☀️" : "🌙"}</button>
           {["shop", "orders"].map(p => (
             <button key={p} onClick={() => { setPage(p); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: page === p ? V.primary : V.textMuted, fontWeight: page === p ? 600 : 400, textTransform: "capitalize" }}>{p === "orders" ? "My Orders" : "Shop"}</button>
           ))}
-          {/* User auth button */}
           {isUserFullyVerified ? (
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" as const }}>
-              {/* Loyalty Points Badge */}
               <div onClick={() => { setShowReferralModal(true); setMobileMenuOpen(false); }} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 8, padding: "4px 10px" }}>
                 <span style={{ fontSize: 13 }}>⭐</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: V.primary }}>{userPoints}</span>
@@ -1536,6 +1519,36 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
           {adminAuth && <button onClick={() => { setPage("admin-dashboard"); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: V.textMuted, fontWeight: 500 }}>👤 Admin</button>}
         </div>
       </nav>
+
+      {/* Mobile menu - OUTSIDE nav to escape sticky stacking context */}
+      {mobileMenuOpen && (
+        <>
+          <div style={{ position: "fixed", top: 64, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", zIndex: 998 }} onClick={() => setMobileMenuOpen(false)} />
+          <div style={{ position: "fixed", top: 64, left: 0, right: 0, background: V.bgSecondary, zIndex: 999, padding: 16, display: "flex", flexDirection: "column", gap: 0, borderTop: `1px solid ${V.border}`, boxShadow: "0 8px 24px rgba(0,0,0,0.15)", animation: "slideUp 0.25s ease", maxHeight: "calc(100vh - 64px)", overflowY: "auto" }}>
+            <button onClick={() => { setDarkMode(!darkMode); setMobileMenuOpen(false); }} style={{ background: "none", border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontSize: 15, color: V.text, width: "100%", textAlign: "left" }}>{darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}</button>
+            {["shop", "orders"].map(p => (
+              <button key={p} onClick={() => { setPage(p); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", borderRadius: 10, padding: "12px 16px", cursor: "pointer", fontSize: 15, color: page === p ? V.primary : V.textMuted, fontWeight: page === p ? 600 : 400, textTransform: "capitalize", width: "100%", textAlign: "left" }}>{p === "orders" ? "📦 My Orders" : "🛒 Shop"}</button>
+            ))}
+            {isUserFullyVerified ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", flexWrap: "wrap" as const }}>
+                <div onClick={() => { setShowReferralModal(true); setMobileMenuOpen(false); }} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 8, padding: "4px 10px" }}>
+                  <span style={{ fontSize: 13 }}>⭐</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: V.primary }}>{userPoints}</span>
+                  <span style={{ fontSize: 10, color: V.textMuted }}>pts</span>
+                </div>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 700 }}>{currentUser?.name?.charAt(0).toUpperCase()}</div>
+                <div style={{ fontSize: 13, lineHeight: 1.2 }}>
+                  <div style={{ fontWeight: 600, color: V.text }}>{currentUser?.name?.split(" ")[0]}</div>
+                  <button onClick={() => { handleUserLogout(); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", fontSize: 11, color: V.textMuted, cursor: "pointer", padding: 0 }}>Sign out</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => { setShowAuthModal(true); setAuthStep("choose"); setMobileMenuOpen(false); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px 16px", fontSize: 15, fontWeight: 600, cursor: "pointer", width: "100%", textAlign: "left", margin: "4px 0" }}>✨ Sign Up</button>
+            )}
+            {adminAuth && <button onClick={() => { setPage("admin-dashboard"); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", borderRadius: 10, padding: "12px 16px", cursor: "pointer", fontSize: 15, color: V.textMuted, fontWeight: 500, width: "100%", textAlign: "left" }}>👤 Admin Dashboard</button>}
+          </div>
+        </>
+      )}
 
       {/* ===== TOASTS ===== */}
       <div style={{ position: "fixed", top: 80, right: 20, zIndex: 1000, display: "flex", flexDirection: "column", gap: 8 }}>
