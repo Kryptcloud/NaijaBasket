@@ -138,16 +138,16 @@ export function Shop({
       {/* ===== HERO ===== */}
       <div style={{
         background: "var(--gradient-hero, linear-gradient(135deg, #2D6A4F 0%, #40916C 50%, #52B788 100%))",
-        borderRadius: 20, padding: "40px 32px", margin: "20px 0 24px", position: "relative", overflow: "hidden",
+        borderRadius: 20, padding: "clamp(20px, 5vw, 40px) clamp(16px, 4vw, 32px)", margin: "20px 0 24px", position: "relative", overflow: "hidden",
       }}>
         <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <span style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(10px)", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600, color: "#fff", display: "flex", alignItems: "center", gap: 4 }}>✓ Verified sellers</span>
-            <span style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(10px)", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600, color: "#fff" }}>📦 Next-day delivery</span>
+          <div className="nb-hero-badges" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" as const }}>
+            <span className="nb-hero-badge" style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(10px)", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600, color: "#fff", display: "flex", alignItems: "center", gap: 4 }}>✓ Verified sellers</span>
+            <span className="nb-hero-badge" style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(10px)", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600, color: "#fff" }}>📦 Next-day delivery</span>
           </div>
           <h1 style={{ fontSize: "clamp(24px, 5vw, 36px)", fontWeight: 800, color: "#fff", margin: "0 0 8px", lineHeight: 1.2 }}>Fresh Foodstuffs,<br />Delivered to Your Door</h1>
           <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 15, margin: "0 0 20px", maxWidth: 500, lineHeight: 1.5 }}>From the markets of Aba to your kitchen — rice, beans, garri, oils, proteins, soups & more. Save with our <strong>Soup Packs, Stew Packs & Home Packages</strong>.</p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div className="nb-hero-buttons" style={{ display: "flex", gap: 10, flexWrap: "wrap" as const }}>
             <button onClick={() => onCategoryChange("soup-packs")} style={{ background: "rgba(255,255,255,0.95)", color: "#2D6A4F", border: "none", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }}>🍲 Soup Packs</button>
             <button onClick={() => onCategoryChange("stew-packs")} style={{ background: "rgba(255,255,255,0.25)", backdropFilter: "blur(10px)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>🫕 Stew Packs</button>
             <button onClick={() => onCategoryChange("home-packs")} style={{ background: "rgba(255,255,255,0.25)", backdropFilter: "blur(10px)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>🏠 Home Packs</button>
@@ -157,7 +157,7 @@ export function Shop({
       </div>
 
       {/* ===== SOCIAL PROOF ===== */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 24 }}>
+      <div className="nb-social-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 24 }}>
         {[
           { icon: "🛡️", label: "2K+", sub: "Verified Sellers" },
           { icon: "⭐", label: "4.8/5", sub: "Customer Rating" },
@@ -251,7 +251,7 @@ export function Shop({
             </p>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+          <div className="nb-pkg-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {filteredPackages.map(pkg => {
               const pricing = calcPackagePrice(pkg);
               const availability = isPackageAvailable(pkg);
@@ -338,7 +338,7 @@ export function Shop({
         <>
           {searchQuery && <p style={{ color: V.textMuted, fontSize: 13, marginBottom: 12 }}>{filteredProducts.length} result{filteredProducts.length !== 1 ? "s" : ""} for "{searchQuery}"</p>}
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+          <div className="nb-product-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14 }}>
             {filteredProducts.map(p => {
               const selVariant = selectedVariants[p.id] || p.variants[0]?.id;
               const variant = p.variants.find(v => v.id === selVariant) || p.variants[0];
@@ -430,7 +430,7 @@ export function Shop({
       {/* ===== TRUST SIGNALS ===== */}
       <div style={{ marginTop: 40, background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 16, padding: "24px 20px", textAlign: "center" }}>
         <h3 style={{ fontSize: 16, fontWeight: 700, color: V.primary, marginBottom: 16 }}>Why NaijaBasket?</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
+        <div className="nb-trust-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16 }}>
           {[
             { icon: "🌾", title: "Farm Fresh", desc: "Direct from farms & markets" },
             { icon: "📦", title: "Ready Packs", desc: "Soup, stew & home bundles" },

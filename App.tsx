@@ -782,6 +782,9 @@ export default function App() {
   // Loyalty points redeem
   const [redeemPoints, setRedeemPoints] = useState(0);
 
+  // Mobile menu
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Admin product management
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -1428,39 +1431,95 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
         @keyframes greenPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(45,106,79,0.4) } 50% { box-shadow: 0 0 0 8px rgba(45,106,79,0) } }
         @keyframes chatPulse { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.08) } }
         .nb-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+        /* === Mobile Responsive === */
+        .nb-nav-links { display: flex; align-items: center; gap: 16px; }
+        .nb-hamburger { display: none; background: none; border: 1px solid var(--border-primary); width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 18px; color: var(--text-primary); align-items: center; justify-content: center; }
+        .nb-mobile-overlay { display: none; }
+
+        @media (max-width: 768px) {
+          .nb-hamburger { display: flex !important; }
+          .nb-nav-links {
+            display: none !important;
+            position: fixed; top: 64px; left: 0; right: 0; bottom: 0;
+            background: var(--bg-secondary); z-index: 100;
+            flex-direction: column; align-items: stretch; gap: 0;
+            padding: 16px; overflow-y: auto;
+            border-top: 1px solid var(--border-primary);
+            animation: slideUp 0.25s ease;
+          }
+          .nb-nav-links.nb-open { display: flex !important; }
+          .nb-nav-links button, .nb-nav-links > div { width: 100%; text-align: left; padding: 12px 16px !important; border-radius: 10px !important; font-size: 15px !important; }
+          .nb-nav-links > div { padding: 12px 16px; }
+          .nb-mobile-overlay.nb-open { display: block; position: fixed; top: 64px; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 99; }
+          .nb-cash-flow { grid-template-columns: 1fr !important; }
+          .nb-pay-grid { grid-template-columns: 1fr !important; }
+          .nb-sales-table { min-width: 700px; }
+          .nb-crm-table { min-width: 600px; }
+          .nb-msg-container { min-height: 400px !important; }
+          .nb-msg-thread { flex-basis: 100% !important; min-width: 0 !important; }
+          .nb-msg-list { max-width: 100% !important; flex-basis: 100% !important; }
+          .nb-delivery-steps { gap: 2px !important; }
+          .nb-delivery-label { font-size: 8px !important; }
+          .nb-cart-item-info { min-width: 0 !important; }
+          .nb-hero-badge { font-size: 11px !important; padding: 4px 8px !important; }
+          .nb-admin-tabs { gap: 4px !important; }
+          .nb-admin-tabs button { padding: 6px 10px !important; font-size: 12px !important; }
+        }
+
+        @media (max-width: 480px) {
+          .nb-pkg-grid { grid-template-columns: 1fr !important; }
+          .nb-product-grid { grid-template-columns: 1fr !important; }
+          .nb-social-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .nb-trust-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .nb-hero-badges { flex-direction: column; gap: 4px !important; }
+          .nb-hero-buttons { flex-direction: column; }
+          .nb-hero-buttons button { width: 100%; }
+        }
+
+        @media (max-width: 360px) {
+          .nb-product-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {/* ===== NAVBAR ===== */}
       <nav style={{
         position: "sticky", top: 0, zIndex: 50,
         background: V.bgSecondary, borderBottom: `1px solid ${V.border}`,
-        padding: "0 24px", height: 64,
+        padding: "0 12px", height: 64,
         display: "flex", alignItems: "center", justifyContent: "space-between",
         backdropFilter: "blur(12px)", boxShadow: "var(--shadow-sm)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setPage("shop")}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🧺</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", flexShrink: 0 }} onClick={() => setPage("shop")}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🧺</div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: V.text, letterSpacing: "0.3px" }}>NaijaBasket</div>
-            <div style={{ fontSize: 10, color: V.textMuted, letterSpacing: "1px", textTransform: "uppercase" }}>Fresh foodstuffs · Aba</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: V.text, letterSpacing: "0.3px" }}>NaijaBasket</div>
+            <div style={{ fontSize: 9, color: V.textMuted, letterSpacing: "1px", textTransform: "uppercase" }}>Fresh foodstuffs · Aba</div>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <button onClick={() => setDarkMode(!darkMode)} style={{ background: "none", border: `1px solid ${V.border}`, width: 36, height: 36, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: V.text }}>{darkMode ? "☀️" : "🌙"}</button>
-          {["shop", "orders"].map(p => (
-            <button key={p} onClick={() => setPage(p)} style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: page === p ? V.primary : V.textMuted, fontWeight: page === p ? 600 : 400, textTransform: "capitalize" }}>{p === "orders" ? "My Orders" : "Shop"}</button>
-          ))}
+        {/* Mobile: cart + hamburger always visible */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ position: "relative", cursor: "pointer", fontSize: 20 }} onClick={() => setPage("cart")}>
             🛒
             {cartCount > 0 && (
               <div style={{ position: "absolute", top: -8, right: -10, background: "var(--gradient-primary)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>{cartCount}</div>
             )}
           </div>
+          <button className="nb-hamburger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ display: "none" }}>{mobileMenuOpen ? "✕" : "☰"}</button>
+        </div>
+        {/* Mobile overlay */}
+        <div className={`nb-mobile-overlay${mobileMenuOpen ? " nb-open" : ""}`} onClick={() => setMobileMenuOpen(false)} />
+        {/* Nav links - hidden on mobile until hamburger toggled */}
+        <div className={`nb-nav-links${mobileMenuOpen ? " nb-open" : ""}`}>
+          <button onClick={() => setDarkMode(!darkMode)} style={{ background: "none", border: `1px solid ${V.border}`, width: 36, height: 36, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: V.text }}>{darkMode ? "☀️" : "🌙"}</button>
+          {["shop", "orders"].map(p => (
+            <button key={p} onClick={() => { setPage(p); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: page === p ? V.primary : V.textMuted, fontWeight: page === p ? 600 : 400, textTransform: "capitalize" }}>{p === "orders" ? "My Orders" : "Shop"}</button>
+          ))}
           {/* User auth button */}
           {isUserFullyVerified ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" as const }}>
               {/* Loyalty Points Badge */}
-              <div onClick={() => setShowReferralModal(true)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 8, padding: "4px 10px" }}>
+              <div onClick={() => { setShowReferralModal(true); setMobileMenuOpen(false); }} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 8, padding: "4px 10px" }}>
                 <span style={{ fontSize: 13 }}>⭐</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: V.primary }}>{userPoints}</span>
                 <span style={{ fontSize: 10, color: V.textMuted }}>pts</span>
@@ -1472,9 +1531,9 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
               </div>
             </div>
           ) : (
-            <button onClick={() => { setShowAuthModal(true); setAuthStep("choose"); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Sign Up</button>
+            <button onClick={() => { setShowAuthModal(true); setAuthStep("choose"); setMobileMenuOpen(false); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Sign Up</button>
           )}
-          <button onClick={() => adminAuth ? setPage("admin-dashboard") : setPage("admin-login")} style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: V.textMuted, fontWeight: 500 }}>{adminAuth ? "👤 Admin" : "🔐"}</button>
+          <button onClick={() => { adminAuth ? setPage("admin-dashboard") : setPage("admin-login"); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: V.textMuted, fontWeight: 500 }}>{adminAuth ? "👤 Admin" : "🔐"}</button>
         </div>
       </nav>
 
@@ -1531,7 +1590,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                 const v = getVariant(p, c.variantId); if (!v) return null;
                 return (
                   <div key={`${c.productId}-${c.variantId}`} style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 12, padding: 16, marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" as const }}>
-                    <div style={{ flex: 1, minWidth: 200 }}>
+                    <div className="nb-cart-item-info" style={{ flex: 1, minWidth: 140 }}>
                       {c.packageLabel && <div style={{ fontSize: 11, color: V.primary, fontWeight: 600, marginBottom: 4 }}>📦 {c.packageLabel}</div>}
                       <div style={{ fontWeight: 600, color: V.text, marginBottom: 2 }}>{p.img} {p.name}</div>
                       <div style={{ fontSize: 13, color: V.textMuted }}>{v.size} ({v.unit})</div>
@@ -1583,7 +1642,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                   </div>
                 ))}
                 <label style={{ fontSize: 13, color: V.textMuted, marginBottom: 8, display: "block" }}>Payment Method</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+                <div className="nb-pay-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
                   {PAYMENT_METHODS.map(pm => (
                     <button key={pm.id} onClick={() => setForm(f => ({ ...f, payment: pm.id }))} style={{ background: form.payment === pm.id ? "var(--bg-accent-muted)" : V.bgCard, border: `2px solid ${form.payment === pm.id ? V.primary : V.border}`, borderRadius: 12, padding: "14px", cursor: "pointer", textAlign: "left" as const }}>
                       <div style={{ fontSize: 20, marginBottom: 4 }}>{pm.icon}</div>
@@ -1654,11 +1713,11 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                 {o.items.map((i, idx) => (
                   <div key={idx} style={{ fontSize: 13, color: V.textSecondary, marginBottom: 3 }}>{i.name} × {i.quantity} — <span style={{ color: V.primary, fontWeight: 600 }}>₦{i.total.toLocaleString()}</span></div>
                 ))}
-                <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                <div className="nb-delivery-steps" style={{ marginTop: 14, display: "flex", justifyContent: "space-between", marginBottom: 8, gap: 4 }}>
                   {deliverySteps.map((step, idx) => (
-                    <div key={step} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
-                      <div style={{ width: 24, height: 24, borderRadius: "50%", background: idx <= currentStep ? V.primary : V.border, color: idx <= currentStep ? "#fff" : V.textMuted, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, animation: idx === currentStep ? "greenPulse 2s infinite" : "none" }}>{idx <= currentStep ? "✓" : idx + 1}</div>
-                      <div style={{ fontSize: 9, color: idx <= currentStep ? V.primary : V.textMuted, marginTop: 4, textAlign: "center", textTransform: "capitalize" }}>{step.replace("_", " ")}</div>
+                    <div key={step} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, minWidth: 0 }}>
+                      <div style={{ width: 22, height: 22, borderRadius: "50%", background: idx <= currentStep ? V.primary : V.border, color: idx <= currentStep ? "#fff" : V.textMuted, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0, animation: idx === currentStep ? "greenPulse 2s infinite" : "none" }}>{idx <= currentStep ? "✓" : idx + 1}</div>
+                      <div className="nb-delivery-label" style={{ fontSize: 9, color: idx <= currentStep ? V.primary : V.textMuted, marginTop: 3, textAlign: "center", textTransform: "capitalize", wordBreak: "break-word" as const, lineHeight: 1.2 }}>{step.replace("_", " ")}</div>
                     </div>
                   ))}
                 </div>
@@ -1701,7 +1760,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
           </div>
 
           {/* Admin tabs */}
-          <div style={{ display: "flex", gap: 6, marginBottom: 24, borderBottom: `1px solid ${V.border}`, paddingBottom: 12, overflowX: "auto" as const }}>
+          <div className="nb-admin-tabs" style={{ display: "flex", gap: 6, marginBottom: 24, borderBottom: `1px solid ${V.border}`, paddingBottom: 12, overflowX: "auto" as const, WebkitOverflowScrolling: "touch" as any }}>
             {([
               { key: "stats", label: "📊 Sales" },
               { key: "accounting", label: "📈 Accounting" },
@@ -1733,8 +1792,8 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
               </div>
               <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: V.primary }}>Recent Orders</h3>
               {orders.length === 0 ? <p style={{ color: V.textMuted, textAlign: "center", padding: "40px 0" }}>No orders yet</p> : (
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as any }}>
+                  <table className="nb-sales-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
                     <thead><tr>{["Order ID", "Customer", "Amount", "Payment", "Status", "Delivery", "Actions"].map(h => <th key={h} style={{ background: "var(--bg-accent-subtle)", padding: "12px 10px", textAlign: "left", fontWeight: 700, color: V.primary, fontSize: 12, borderBottom: `1px solid ${V.border}` }}>{h}</th>)}</tr></thead>
                     <tbody>
                       {orders.map(o => (
@@ -1811,7 +1870,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
               </div>
 
               {/* Cash Flow */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+              <div className="nb-cash-flow" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
                 <div style={{ background: "var(--color-success-bg)", borderRadius: 14, padding: 18, textAlign: "center" }}>
                   <div style={{ fontSize: 11, color: V.success, fontWeight: 600, textTransform: "uppercase" }}>Money In</div>
                   <div style={{ fontSize: 22, fontWeight: 800, color: V.success, margin: "6px 0" }}>₦{acctRevenue.toLocaleString()}</div>
@@ -2050,8 +2109,8 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                 orders.forEach(o => { const key = o.customer.phone; if (!stats[key]) stats[key] = { name: o.customer.name, phone: o.customer.phone, address: o.customer.address, purchases: 0, totalSpent: 0, lastOrder: "" }; stats[key].purchases += 1; stats[key].totalSpent += o.total; stats[key].lastOrder = o.date; });
                 const list = Object.values(stats).sort((a, b) => b.totalSpent - a.totalSpent);
                 return list.length === 0 ? <p style={{ color: V.textMuted, textAlign: "center", padding: "40px 0" }}>No customers yet</p> : (
-                  <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as any }}>
+                    <table className="nb-crm-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 600 }}>
                       <thead><tr>{["Name", "Phone", "Orders", "Total Spent", "Last Order"].map(h => <th key={h} style={{ background: "var(--bg-accent-subtle)", padding: "12px 10px", textAlign: "left", fontWeight: 700, color: V.primary, fontSize: 12 }}>{h}</th>)}</tr></thead>
                       <tbody>{list.map((c, idx) => (
                         <tr key={idx}>
@@ -2071,9 +2130,9 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
 
           {/* ===== MESSAGES TAB ===== */}
           {adminView === "messages" && (
-            <div style={{ display: "flex", gap: 16, minHeight: 500, flexWrap: "wrap" as const }}>
+            <div className="nb-msg-container" style={{ display: "flex", gap: 16, minHeight: 500, flexWrap: "wrap" as const }}>
               {/* Conversation list */}
-              <div style={{ flex: "1 1 260px", maxWidth: 320 }}>
+              <div className="nb-msg-list" style={{ flex: "1 1 260px", maxWidth: 320 }}>
                 <h3 style={{ fontSize: 16, fontWeight: 700, color: V.primary, marginBottom: 12 }}>💬 Conversations</h3>
                 {conversations.length === 0 ? <p style={{ color: V.textMuted, fontSize: 13, textAlign: "center", padding: "40px 0" }}>No messages yet</p> :
                   conversations.map(c => (
@@ -2089,7 +2148,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                 }
               </div>
               {/* Chat thread */}
-              <div style={{ flex: "2 1 400px", background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 14, display: "flex", flexDirection: "column" }}>
+              <div className="nb-msg-thread" style={{ flex: "2 1 300px", background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 14, display: "flex", flexDirection: "column", minWidth: 0 }}>
                 {!activeConvoId ? (
                   <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: V.textMuted, fontSize: 14 }}>Select a conversation</div>
                 ) : (() => {
