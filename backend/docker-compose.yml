@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: naijabasket-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-naijabasket}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-naijabasket_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-naijabasket}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-naijabasket}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - naijabasket-network
+
+  # Backend Application (optional - for development)
+  backend:
+    build: .
+    container_name: naijabasket-api
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER:-naijabasket}:${POSTGRES_PASSWORD:-naijabasket_dev_password}@postgres:5432/${POSTGRES_DB:-naijabasket}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-min-32-chars-long}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:-dev-refresh-secret-min-32-chars}
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY:-sk_test_xxxx}
+      PAYSTACK_PUBLIC_KEY: ${PAYSTACK_PUBLIC_KEY:-pk_test_xxxx}
+      PORT: 3000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - naijabasket-network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  naijabasket-network:
+    driver: bridge
