@@ -1351,7 +1351,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
 
 ════════════════════════════════════════════
   Thank you for shopping with NaijaBasket! 🧺
-  Questions? WhatsApp: +234 803 456 7890
+  Questions? WhatsApp: +234 815 924 2986
 ════════════════════════════════════════════
 `;
     const blob = new Blob([receipt], { type: "text/plain" });
@@ -1660,7 +1660,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
               <div style={{ borderTop: `1px solid ${V.border}`, paddingTop: 10, marginTop: 8, display: "flex", justifyContent: "space-between", fontWeight: 700 }}><span>Total</span><span style={{ color: V.primary }}>₦{placed.total.toLocaleString()}</span></div>
             </div>
             <div style={{ background: "var(--color-success-bg)", border: `1px solid var(--border-accent)`, borderRadius: 12, padding: 16, marginBottom: 20, textAlign: "left" }}>
-              <p style={{ fontSize: 14, color: V.textSecondary, lineHeight: 1.6, margin: 0 }}>🧺 <strong>Thank you for shopping with NaijaBasket!</strong><br />Your foodstuffs are being prepared. WhatsApp us at <strong style={{ color: V.primary }}>+234 803 456 7890</strong></p>
+              <p style={{ fontSize: 14, color: V.textSecondary, lineHeight: 1.6, margin: 0 }}>🧺 <strong>Thank you for shopping with NaijaBasket!</strong><br />Your foodstuffs are being prepared. WhatsApp us at <strong style={{ color: V.primary }}>+234 815 924 2986</strong></p>
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" as const }}>
               <button onClick={() => downloadReceipt(placed)} style={{ flex: 1, background: "var(--gradient-secondary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px", fontWeight: 600, fontSize: 14, cursor: "pointer", minWidth: 140 }}>📄 Receipt</button>
@@ -2229,7 +2229,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
         <div>Based in Aba, Abia State · Delivers Nationwide · © {new Date().getFullYear()}</div>
         <div style={{ marginTop: 8, display: "flex", gap: 20, justifyContent: "center", flexWrap: "wrap" as const }}>
           <a href="tel:+2348034567890" style={{ color: V.primary, textDecoration: "none" }}>📱 +234 803 456 7890</a>
-          <a href="https://wa.me/2348034567890" target="_blank" rel="noopener noreferrer" style={{ color: V.primary, textDecoration: "none" }}>💬 WhatsApp</a>
+          <a href="https://wa.me/2348159242986" target="_blank" rel="noopener noreferrer" style={{ color: V.primary, textDecoration: "none" }}>💬 WhatsApp</a>
         </div>
       </footer>
 
@@ -2396,7 +2396,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
               <h4 style={{ fontSize: 16, fontWeight: 700, color: V.text, margin: 0 }}>Chat on WhatsApp</h4>
               <p style={{ fontSize: 13, color: V.textMuted, lineHeight: 1.5, margin: 0 }}>Get quick support from our team. We respond within 30 minutes during business hours.</p>
               <div style={{ fontSize: 15, fontWeight: 600, color: V.primary }}>+234 803 456 7890</div>
-              <a href="https://wa.me/2348034567890?text=Hi%20NaijaBasket!%20I%20need%20help%20with..." target="_blank" rel="noopener noreferrer" style={{ background: "#25D366", color: "#fff", border: "none", borderRadius: 12, padding: "14px 28px", fontWeight: 700, fontSize: 15, cursor: "pointer", textDecoration: "none", display: "inline-block" }}>Open WhatsApp →</a>
+              <a href="https://wa.me/2348159242986?text=Hi%20NaijaBasket!%20I%20need%20help%20with%20my%20order" target="_blank" rel="noopener noreferrer" style={{ background: "#25D366", color: "#fff", border: "none", borderRadius: 12, padding: "14px 28px", fontWeight: 700, fontSize: 15, cursor: "pointer", textDecoration: "none", display: "inline-block" }}>Open WhatsApp →</a>
               <div style={{ fontSize: 11, color: V.textMuted }}>Mon–Sat: 7am – 9pm</div>
             </div>
           )}
