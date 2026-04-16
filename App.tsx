@@ -1484,7 +1484,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
 
       {/* ===== NAVBAR ===== */}
       <nav style={{
-        position: "sticky", top: 0, zIndex: 50,
+        position: "sticky", top: 0, zIndex: 200,
         background: V.bgSecondary, borderBottom: `1px solid ${V.border}`,
         padding: "0 12px", height: 64,
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -1533,7 +1533,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
           ) : (
             <button onClick={() => { setShowAuthModal(true); setAuthStep("choose"); setMobileMenuOpen(false); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Sign Up</button>
           )}
-          <button onClick={() => { adminAuth ? setPage("admin-dashboard") : setPage("admin-login"); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: V.textMuted, fontWeight: 500 }}>{adminAuth ? "👤 Admin" : "🔐"}</button>
+          {adminAuth && <button onClick={() => { setPage("admin-dashboard"); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: V.textMuted, fontWeight: 500 }}>👤 Admin</button>}
         </div>
       </nav>
 
