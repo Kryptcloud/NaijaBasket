@@ -18,13 +18,15 @@ interface Product {
   img: string;
   variants: ProductVariant[];
   inStock: boolean;
+  brands?: string[];
 }
 
 interface CartItem {
   productId: number;
   variantId: string;
   quantity: number;
-  packageLabel?: string; // groups items from a package visually in cart
+  packageLabel?: string;
+  brand?: string;
 }
 
 interface Order {
@@ -41,6 +43,7 @@ interface Order {
   }>;
   subtotal: number;
   deliveryFee: number;
+  deliveryType?: "next-day" | "same-day";
   total: number;
   paymentMethod: string;
   paymentRef?: string;
@@ -151,17 +154,20 @@ const CATEGORIES = [
   { id: "soups", name: "Soups & Seeds", icon: "🥣" },
   { id: "spices", name: "Spices", icon: "🧄" },
   { id: "pasta", name: "Pasta & Flour", icon: "🍝" },
+  { id: "salads", name: "Salads", icon: "🥗" },
 ];
 
 const INITIAL_PRODUCTS: Product[] = [
   // Grains
   { id: 1, name: "Rice (Local)", category: "grains", desc: "Premium Nigerian long-grain rice", img: "🌾",
+    brands: ["Abakaliki", "Ofada", "Afikpo", "Ebonyi"],
     variants: [
       { id: "1-q", size: "Quarter Bag", unit: "12.5kg", price: 15000, stock: 50 },
       { id: "1-h", size: "Half Bag", unit: "25kg", price: 28000, stock: 40 },
       { id: "1-f", size: "Full Bag", unit: "50kg", price: 52000, stock: 30 },
     ], inStock: true },
   { id: 2, name: "Rice (Foreign)", category: "grains", desc: "Imported parboiled rice, premium quality", img: "🌾",
+    brands: ["Mama Gold", "Royal Stallion", "Caprice", "Stallion"],
     variants: [
       { id: "2-q", size: "Quarter Bag", unit: "12.5kg", price: 19000, stock: 35 },
       { id: "2-h", size: "Half Bag", unit: "25kg", price: 36000, stock: 25 },
@@ -230,6 +236,7 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "12-25", size: "25L Jerrycan", unit: "25L", price: 48000, stock: 15 },
     ], inStock: true },
   { id: 13, name: "Vegetable Oil", category: "oils", desc: "Premium vegetable cooking oil", img: "🍶",
+    brands: ["Devon King's", "Turkey", "Power Oil", "Grand Pure"],
     variants: [
       { id: "13-5", size: "5 Litres", unit: "5L", price: 9000, stock: 50 },
       { id: "13-25", size: "25L Jerrycan", unit: "25L", price: 42000, stock: 20 },
@@ -353,6 +360,7 @@ const INITIAL_PRODUCTS: Product[] = [
     ], inStock: true },
   // New spices
   { id: 39, name: "Seasoning Cubes", category: "spices", desc: "Maggi / Knorr assorted seasoning cubes", img: "🧂",
+    brands: ["Maggi", "Knorr", "Royco", "Star"],
     variants: [
       { id: "39-p", size: "Pack (50 cubes)", unit: "~250g", price: 2500, stock: 120 },
       { id: "39-c", size: "Carton", unit: "~2.5kg", price: 22000, stock: 30 },
@@ -365,11 +373,13 @@ const INITIAL_PRODUCTS: Product[] = [
 
   // Pasta & Flour
   { id: 30, name: "Spaghetti", category: "pasta", desc: "Quality spaghetti pasta", img: "🍝",
+    brands: ["Golden Penny", "Dangote", "Honeywell"],
     variants: [
       { id: "30-p", size: "Pack (500g)", unit: "500g", price: 800, stock: 200 },
       { id: "30-c", size: "Carton (20 packs)", unit: "10kg", price: 14000, stock: 40 },
     ], inStock: true },
   { id: 31, name: "Noodles", category: "pasta", desc: "Indomie & assorted noodles", img: "🍜",
+    brands: ["Indomie", "Dangote", "Honeywell", "Minimie"],
     variants: [
       { id: "31-p", size: "Pack (single)", unit: "70g", price: 250, stock: 500 },
       { id: "31-c", size: "Carton (40 packs)", unit: "2.8kg", price: 9000, stock: 50 },
@@ -388,6 +398,54 @@ const INITIAL_PRODUCTS: Product[] = [
     variants: [
       { id: "34-1", size: "1 kg", unit: "1kg", price: 1800, stock: 70 },
       { id: "34-5", size: "5 kg", unit: "5kg", price: 8500, stock: 35 },
+    ], inStock: true },
+
+  // Salads
+  { id: 42, name: "Lettuce", category: "salads", desc: "Fresh crispy iceberg lettuce", img: "🥬",
+    variants: [
+      { id: "42-s", size: "Small Head", unit: "~200g", price: 800, stock: 80 },
+      { id: "42-l", size: "Large Head", unit: "~500g", price: 1500, stock: 50 },
+    ], inStock: true },
+  { id: 43, name: "Cucumber", category: "salads", desc: "Fresh green cucumbers", img: "🥒",
+    variants: [
+      { id: "43-3", size: "3 Pieces", unit: "~500g", price: 600, stock: 100 },
+      { id: "43-6", size: "6 Pieces", unit: "~1kg", price: 1000, stock: 60 },
+    ], inStock: true },
+  { id: 44, name: "Cabbage", category: "salads", desc: "Fresh green cabbage head", img: "🥬",
+    variants: [
+      { id: "44-s", size: "Small Head", unit: "~500g", price: 500, stock: 80 },
+      { id: "44-l", size: "Large Head", unit: "~1kg", price: 900, stock: 50 },
+    ], inStock: true },
+  { id: 45, name: "Carrots", category: "salads", desc: "Fresh orange carrots, crunchy", img: "🥕",
+    variants: [
+      { id: "45-s", size: "Small Bundle", unit: "~500g", price: 500, stock: 90 },
+      { id: "45-l", size: "Large Bundle", unit: "~1kg", price: 900, stock: 60 },
+    ], inStock: true },
+  { id: 46, name: "Green Pepper", category: "salads", desc: "Fresh bell peppers for salads", img: "🫑",
+    variants: [
+      { id: "46-s", size: "Small Pack", unit: "~300g", price: 600, stock: 70 },
+      { id: "46-l", size: "Large Pack", unit: "~1kg", price: 1500, stock: 40 },
+    ], inStock: true },
+  { id: 47, name: "Avocado", category: "salads", desc: "Ripe creamy avocados", img: "🥑",
+    variants: [
+      { id: "47-3", size: "3 Pieces", unit: "~450g", price: 1200, stock: 60 },
+      { id: "47-6", size: "6 Pieces", unit: "~900g", price: 2200, stock: 35 },
+    ], inStock: true },
+  { id: 48, name: "Sweet Corn", category: "salads", desc: "Fresh sweet corn cobs", img: "🌽",
+    variants: [
+      { id: "48-3", size: "3 Cobs", unit: "~600g", price: 700, stock: 80 },
+      { id: "48-6", size: "6 Cobs", unit: "~1.2kg", price: 1200, stock: 50 },
+    ], inStock: true },
+  { id: 49, name: "Beetroot", category: "salads", desc: "Fresh beetroot, deep red", img: "🟣",
+    variants: [
+      { id: "49-s", size: "Small Pack", unit: "~500g", price: 600, stock: 70 },
+      { id: "49-l", size: "Large Pack", unit: "~1kg", price: 1000, stock: 40 },
+    ], inStock: true },
+  { id: 50, name: "Salad Cream", category: "salads", desc: "Heinz / Bama salad cream dressing", img: "🥛",
+    brands: ["Heinz", "Bama", "Crosse & Blackwell"],
+    variants: [
+      { id: "50-s", size: "Small Bottle", unit: "285ml", price: 1500, stock: 60 },
+      { id: "50-l", size: "Large Bottle", unit: "460ml", price: 2500, stock: 35 },
     ], inStock: true },
 ];
 
@@ -693,7 +751,7 @@ export default function App() {
   });
 
   // Checkout form
-  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", payment: "naira" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", payment: "naira", deliveryType: "next-day" as "next-day" | "same-day" });
 
   // UI state
   const [placed, setPlaced] = useState<Order | null>(null);
@@ -712,6 +770,10 @@ export default function App() {
   const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
   const [pwMsg, setPwMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [pwLoading, setPwLoading] = useState(false);
+  const [sameDayFee, setSameDayFee] = useState(() => {
+    try { const saved = localStorage.getItem("nb_same_day_fee"); return saved ? Number(saved) : 3000; }
+    catch { return 3000; }
+  });
 
   // Inventory
   const [inventoryData, setInventoryData] = useState<{ purchases: any[]; damages: any[] }>({ purchases: [], damages: [] });
@@ -788,7 +850,7 @@ export default function App() {
   // Admin product management
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: "", category: "grains", desc: "", variants: [{ size: "", unit: "", price: "", stock: "" }] });
+  const [newProduct, setNewProduct] = useState({ name: "", category: "grains", desc: "", brands: "", variants: [{ size: "", unit: "", price: "", stock: "" }] });
 
   // Product helper wrappers
   const getProduct = (id: number) => getProductFrom(products, id);
@@ -829,8 +891,14 @@ export default function App() {
     if (n.includes("coconut")) return "🥥";
     if (n.includes("honey")) return "🍯";
     if (n.includes("water") || n.includes("drink")) return "🥤";
+    if (n.includes("lettuce") || n.includes("cabbage")) return "🥬";
+    if (n.includes("cucumber")) return "🥒";
+    if (n.includes("carrot")) return "🥕";
+    if (n.includes("avocado")) return "🥑";
+    if (n.includes("beetroot") || n.includes("beet")) return "🟣";
+    if (n.includes("salad")) return "🥗";
     // Fallback by category
-    const catIcons: Record<string, string> = { grains: "🌾", tubers: "🥔", oils: "🫒", vegetables: "🍅", proteins: "🥩", soups: "🥣", spices: "🧄", pasta: "🍝" };
+    const catIcons: Record<string, string> = { grains: "🌾", tubers: "🥔", oils: "🫒", vegetables: "🍅", proteins: "🥩", soups: "🥣", spices: "🧄", pasta: "🍝", salads: "🥗" };
     return catIcons[category] || "📦";
   }
 
@@ -1060,18 +1128,18 @@ export default function App() {
 
   // ===== CART =====
   // Internal cart add functions (bypasses auth check)
-  const doAddToCart = (productId: number, variantId: string, packageLabel?: string) => {
+  const doAddToCart = (productId: number, variantId: string, packageLabel?: string, brand?: string) => {
     setCart(prev => {
-      const idx = prev.findIndex(c => c.productId === productId && c.variantId === variantId);
+      const idx = prev.findIndex(c => c.productId === productId && c.variantId === variantId && c.brand === brand);
       if (idx >= 0) {
         const next = [...prev];
         next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
         return next;
       }
-      return [...prev, { productId, variantId, quantity: 1, packageLabel }];
+      return [...prev, { productId, variantId, quantity: 1, packageLabel, brand }];
     });
     const p = getProduct(productId);
-    if (p && !packageLabel) showToast(`${p.name} added to basket`, "success");
+    if (p && !packageLabel) showToast(`${p.name}${brand ? ` (${brand})` : ""} added to basket`, "success");
   };
 
   const doAddPackageToCart = (pkg: FoodPackage, customItems?: PackageItem[]) => {
@@ -1095,14 +1163,14 @@ export default function App() {
   };
 
   // Public cart functions — gate behind auth
-  const addToCart = useCallback((productId: number, variantId: string, _packageLabel?: string) => {
+  const addToCart = useCallback((productId: number, variantId: string, _packageLabel?: string, brand?: string) => {
     if (!isUserFullyVerified) {
       setPendingCartAction({ type: "single", productId, variantId });
       setShowAuthModal(true);
       setAuthStep(currentUser ? (currentUser.emailVerified ? (currentUser.phone ? "otp-phone" : "add-phone") : "otp-email") : "choose");
       return;
     }
-    doAddToCart(productId, variantId, _packageLabel);
+    doAddToCart(productId, variantId, _packageLabel, brand);
   }, [isUserFullyVerified, currentUser]);
 
   const addPackageToCart = useCallback((pkg: FoodPackage, customItems?: PackageItem[]) => {
@@ -1139,7 +1207,8 @@ export default function App() {
     if (!v) return sum;
     return sum + v.price * c.quantity;
   }, 0);
-  const deliveryFee = form.address.toLowerCase().includes("aba") || form.address === "" ? 0 : 2500;
+  const baseDeliveryFee = form.address.toLowerCase().includes("aba") || form.address === "" ? 0 : 2500;
+  const deliveryFee = baseDeliveryFee + (form.deliveryType === "same-day" ? sameDayFee : 0);
   const cartTotal = cartSubtotal + deliveryFee;
   const pointsDiscount = Math.min(redeemPoints * POINTS_VALUE, cartSubtotal, userPoints * POINTS_VALUE);
 
@@ -1204,7 +1273,7 @@ export default function App() {
 
     const order: Order = {
       id: generateOrderId(), date: new Date().toISOString(), items: orderItems,
-      subtotal: cartSubtotal, deliveryFee, total: cartTotal, paymentMethod: form.payment,
+      subtotal: cartSubtotal, deliveryFee, total: cartTotal, paymentMethod: form.payment, deliveryType: form.deliveryType,
       status: "pending", deliveryStatus: "preparing",
       customer: { name: form.name, phone: form.phone, email: form.email, address: form.address },
     };
@@ -1340,7 +1409,7 @@ ${order.items.map(i => `${i.name} — ${i.variant}\n  ${i.quantity} × ₦${i.un
 
 ────────────────────────────────────────────
 Subtotal:      ₦${order.subtotal.toLocaleString()}
-Delivery Fee:  ${order.deliveryFee === 0 ? "FREE (Aba)" : `₦${order.deliveryFee.toLocaleString()}`}
+Delivery Fee:  ${order.deliveryFee === 0 ? "FREE (Aba)" : `₦${order.deliveryFee.toLocaleString()}`}${order.deliveryType === "same-day" ? " (Same-Day ⚡)" : ""}
 TOTAL:         ₦${order.total.toLocaleString()}
 
 PAYMENT
@@ -1448,10 +1517,16 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
         backdropFilter: "blur(12px)", boxShadow: "var(--shadow-sm)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", flexShrink: 0 }} onClick={() => setPage("shop")}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🧺</div>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 7h14l-1.5 9a2 2 0 01-2 1.7H8.5a2 2 0 01-2-1.7L5 7z" fill="#fff" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round"/>
+              <path d="M8 7V5a4 4 0 018 0v2" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
+              <path d="M9 11v3M12 11v3M15 11v3" stroke="var(--color-primary)" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: V.text, letterSpacing: "0.3px" }}>NaijaBasket</div>
-            <div style={{ fontSize: 9, color: V.textMuted, letterSpacing: "1px", textTransform: "uppercase" }}>Fresh foodstuffs · Aba</div>
+            <div style={{ fontSize: 9, color: V.textMuted, letterSpacing: "1px", textTransform: "uppercase" }}>Fresh Foodstuffs</div>
           </div>
         </div>
         {/* Mobile: cart + hamburger always visible */}
@@ -1528,6 +1603,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
         {toasts.map(t => (
           <div key={t.id} style={{ padding: "12px 20px", borderRadius: 10, background: t.type === "success" ? "var(--color-success)" : t.type === "error" ? "var(--color-danger)" : "var(--color-secondary)", color: "#fff", fontSize: 14, fontWeight: 500, boxShadow: "var(--shadow-lg)", animation: "slideInRight 0.3s ease", display: "flex", alignItems: "center", gap: 8, maxWidth: 350 }}>
             {t.type === "success" ? "✅" : t.type === "error" ? "❌" : "ℹ️"} {t.message}
+            <button onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))} style={{ background: "rgba(255,255,255,0.25)", border: "none", borderRadius: 6, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, lineHeight: 1, padding: 0, marginLeft: 4 }}>✕</button>
           </div>
         ))}
       </div>
@@ -1543,7 +1619,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
           cart={cart}
           cartCount={cartCount}
           cartTotal={cartSubtotal}
-          onAddToCart={addToCart}
+          onAddToCart={(productId: number, variantId: string, brand?: string) => addToCart(productId, variantId, undefined, brand)}
           onAddPackage={addPackageToCart}
           onEditPackage={(pkg) => setEditingPackage({ pkg, items: pkg.items.map(i => ({ ...i })) })}
           onNavigate={setPage}
@@ -1578,7 +1654,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                   <div key={`${c.productId}-${c.variantId}`} style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 12, padding: 16, marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" as const }}>
                     <div className="nb-cart-item-info" style={{ flex: 1, minWidth: 140 }}>
                       {c.packageLabel && <div style={{ fontSize: 11, color: V.primary, fontWeight: 600, marginBottom: 4 }}>📦 {c.packageLabel}</div>}
-                      <div style={{ fontWeight: 600, color: V.text, marginBottom: 2 }}>{p.img} {p.name}</div>
+                      <div style={{ fontWeight: 600, color: V.text, marginBottom: 2 }}>{p.img} {p.name}{c.brand ? ` — ${c.brand}` : ""}</div>
                       <div style={{ fontSize: 13, color: V.textMuted }}>{v.size} ({v.unit})</div>
                       <div style={{ color: V.primary, fontWeight: 700, marginTop: 4 }}>₦{(v.price * c.quantity).toLocaleString()}</div>
                     </div>
@@ -1594,7 +1670,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
               {/* Totals */}
               <div style={{ background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 12, padding: 16, marginBottom: 20, marginTop: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 14 }}><span style={{ color: V.textSecondary }}>Subtotal</span><span style={{ fontWeight: 600 }}>₦{cartSubtotal.toLocaleString()}</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 14 }}><span style={{ color: V.textSecondary }}>Delivery Fee</span><span style={{ fontWeight: 600, color: deliveryFee === 0 ? V.success : V.text }}>{deliveryFee === 0 ? "FREE (Aba)" : `₦${deliveryFee.toLocaleString()}`}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 14 }}><span style={{ color: V.textSecondary }}>Delivery Fee{form.deliveryType === "same-day" ? " (Same-Day ⚡)" : ""}</span><span style={{ fontWeight: 600, color: deliveryFee === 0 ? V.success : V.text }}>{deliveryFee === 0 ? "FREE (Aba)" : `₦${deliveryFee.toLocaleString()}`}</span></div>
                 {/* Loyalty Points Redemption */}
                 {isUserFullyVerified && userPoints > 0 && (
                   <div style={{ background: V.bgSecondary, borderRadius: 10, padding: "10px 12px", marginBottom: 8, border: `1px solid ${V.borderSubtle}` }}>
@@ -1627,6 +1703,19 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                     <input style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px 14px", color: V.text, fontSize: 15, outline: "none" }} value={(form as any)[field.key]} onChange={e => setForm(f => ({ ...f, [field.key]: e.target.value }))} placeholder={field.placeholder} />
                   </div>
                 ))}
+                <label style={{ fontSize: 13, color: V.textMuted, marginBottom: 8, display: "block" }}>Delivery Speed</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+                  <button onClick={() => setForm(f => ({ ...f, deliveryType: "next-day" as const }))} style={{ background: form.deliveryType === "next-day" ? "var(--bg-accent-muted)" : V.bgCard, border: `2px solid ${form.deliveryType === "next-day" ? V.primary : V.border}`, borderRadius: 12, padding: "14px", cursor: "pointer", textAlign: "left" as const }}>
+                    <div style={{ fontSize: 20, marginBottom: 4 }}>📦</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: V.text }}>Next-Day</div>
+                    <div style={{ fontSize: 12, color: V.textMuted }}>Standard delivery</div>
+                  </button>
+                  <button onClick={() => setForm(f => ({ ...f, deliveryType: "same-day" as const }))} style={{ background: form.deliveryType === "same-day" ? "var(--bg-accent-muted)" : V.bgCard, border: `2px solid ${form.deliveryType === "same-day" ? V.primary : V.border}`, borderRadius: 12, padding: "14px", cursor: "pointer", textAlign: "left" as const }}>
+                    <div style={{ fontSize: 20, marginBottom: 4 }}>⚡</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: V.text }}>Same-Day</div>
+                    <div style={{ fontSize: 12, color: V.textMuted }}>+₦{sameDayFee.toLocaleString()} extra</div>
+                  </button>
+                </div>
                 <label style={{ fontSize: 13, color: V.textMuted, marginBottom: 8, display: "block" }}>Payment Method</label>
                 <div className="nb-pay-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
                   {PAYMENT_METHODS.map(pm => (
@@ -1945,7 +2034,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap" as const, gap: 12 }}>
                 <h3 style={{ fontSize: 18, fontWeight: 700, color: V.primary, margin: 0 }}>📦 Product & Inventory Management</h3>
-                <button onClick={() => { setShowAddProduct(true); setNewProduct({ name: "", category: "grains", desc: "", variants: [{ size: "", unit: "", price: "", stock: "" }] }); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>+ Add New Product</button>
+                <button onClick={() => { setShowAddProduct(true); setNewProduct({ name: "", category: "grains", desc: "", brands: "", variants: [{ size: "", unit: "", price: "", stock: "" }] }); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>+ Add New Product</button>
               </div>
 
               {/* Add Product Form */}
@@ -1974,6 +2063,10 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ fontSize: 12, color: V.textMuted, display: "block", marginBottom: 4 }}>Description</label>
                     <input value={newProduct.desc} onChange={e => setNewProduct(f => ({ ...f, desc: e.target.value }))} placeholder="Short description" style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "10px 12px", color: V.text, fontSize: 14, outline: "none" }} />
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 12, color: V.textMuted, display: "block", marginBottom: 4 }}>Brands <span style={{ color: V.textMuted }}>(comma-separated, leave empty if no brands)</span></label>
+                    <input value={newProduct.brands} onChange={e => setNewProduct(f => ({ ...f, brands: e.target.value }))} placeholder="e.g. Mama Gold, Royal Stallion, Caprice" style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "10px 12px", color: V.text, fontSize: 14, outline: "none" }} />
                   </div>
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ fontSize: 12, color: V.textMuted, display: "block", marginBottom: 8 }}>Variants (sizes & pricing)</label>
@@ -2010,6 +2103,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                         stock: Number(v.stock) || 0,
                       })),
                       inStock: true,
+                      ...(newProduct.brands.trim() ? { brands: newProduct.brands.split(",").map(b => b.trim()).filter(Boolean) } : {}),
                     };
                     setProducts(prev => [...prev, product]);
                     setShowAddProduct(false);
@@ -2220,6 +2314,15 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                   <div><strong style={{ color: V.text }}>Email:</strong> {loginForm.email || "admin"}</div>
                   <div><strong style={{ color: V.text }}>Platform:</strong> NaijaBasket v1.0</div>
                 </div>
+              </div>
+              <div style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 14, padding: 24, marginTop: 20 }}>
+                <h4 style={{ fontSize: 15, fontWeight: 700, color: V.text, marginBottom: 12 }}>🚚 Delivery Settings</h4>
+                <label style={{ fontSize: 13, color: V.textMuted, display: "block", marginBottom: 6 }}>Same-Day Delivery Surcharge (₦)</label>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <input type="number" value={sameDayFee} onChange={e => setSameDayFee(Math.max(0, Number(e.target.value)))} style={{ flex: 1, background: V.bg, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px 14px", color: V.text, fontSize: 14, outline: "none" }} />
+                  <button onClick={() => { localStorage.setItem("nb_same_day_fee", String(sameDayFee)); showToast("Same-day fee updated!", "success"); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" as const }}>Save</button>
+                </div>
+                <div style={{ fontSize: 12, color: V.textMuted, marginTop: 8 }}>Currently: ₦{sameDayFee.toLocaleString()} — Customers who choose same-day delivery pay this on top of the standard delivery fee.</div>
               </div>
             </div>
           )}

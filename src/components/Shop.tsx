@@ -16,6 +16,7 @@ interface Product {
   img: string;
   variants: ProductVariant[];
   inStock: boolean;
+  brands?: string[];
 }
 
 interface CartItem {
@@ -23,6 +24,7 @@ interface CartItem {
   variantId: string;
   quantity: number;
   packageLabel?: string;
+  brand?: string;
 }
 
 interface PackageItem {
@@ -78,7 +80,7 @@ interface ShopProps {
   cart: CartItem[];
   cartCount: number;
   cartTotal: number;
-  onAddToCart: (productId: number, variantId: string) => void;
+  onAddToCart: (productId: number, variantId: string, brand?: string) => void;
   onAddPackage: (pkg: FoodPackage) => void;
   onEditPackage: (pkg: FoodPackage) => void;
   onNavigate: (page: string) => void;
@@ -100,6 +102,7 @@ export function Shop({
   flashDeal, dealCountdown, getProductRating, onReview, currentUser,
 }: ShopProps) {
   const [selectedVariants, setSelectedVariants] = useState<Record<number, string>>({});
+  const [selectedBrands, setSelectedBrands] = useState<Record<number, string>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedPkg, setExpandedPkg] = useState<string | null>(null);
 
@@ -379,6 +382,19 @@ export function Shop({
                     );
                   })()}
 
+                  {/* Brand dropdown */}
+                  {p.brands && p.brands.length > 0 && (
+                    <div style={{ marginBottom: 10 }}>
+                      <select
+                        value={selectedBrands[p.id] || p.brands[0]}
+                        onChange={e => setSelectedBrands(prev => ({ ...prev, [p.id]: e.target.value }))}
+                        style={{ width: "100%", padding: "7px 10px", borderRadius: 8, border: `1px solid ${V.borderSubtle}`, background: V.bgSecondary, color: V.text, fontSize: 12, fontWeight: 600, cursor: "pointer", outline: "none" }}
+                      >
+                        {p.brands.map(b => <option key={b} value={b}>{b}</option>)}
+                      </select>
+                    </div>
+                  )}
+
                   {/* Variant chips */}
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
                     {p.variants.map(v => (
@@ -400,7 +416,7 @@ export function Shop({
                       <div style={{ fontSize: 11, color: V.textMuted }}>{variant.unit}</div>
                     </div>
                     <button
-                      onClick={() => { if (variant.stock > 0) onAddToCart(p.id, variant.id); }}
+                      onClick={() => { if (variant.stock > 0) onAddToCart(p.id, variant.id, p.brands ? (selectedBrands[p.id] || p.brands[0]) : undefined); }}
                       disabled={variant.stock === 0}
                       style={{
                         background: variant.stock === 0 ? V.border : inCart ? "var(--color-success)" : "var(--gradient-primary)",
