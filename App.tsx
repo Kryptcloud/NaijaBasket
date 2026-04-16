@@ -1441,7 +1441,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
 
       {/* ===== NAVBAR ===== */}
       <nav style={{
-        position: "sticky", top: 0, zIndex: 200,
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
         background: V.bgSecondary, borderBottom: `1px solid ${V.border}`,
         padding: "0 12px", height: 64,
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -1489,6 +1489,9 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
           {adminAuth && <button onClick={() => { setPage("admin-dashboard"); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: V.textMuted, fontWeight: 500 }}>👤 Admin</button>}
         </div>
       </nav>
+
+      {/* Spacer for fixed navbar */}
+      <div style={{ height: 64 }} />
 
       {/* Mobile menu - OUTSIDE nav to escape sticky stacking context */}
       {mobileMenuOpen && (
