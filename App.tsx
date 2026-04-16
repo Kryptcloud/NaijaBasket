@@ -916,48 +916,32 @@ export default function App() {
     setDevOtp("");
   };
 
+  // Generate a random 6-digit OTP for client-side mock auth
+  const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+
   const handleSignup = async () => {
     setAuthError("");
+    if (!signupForm.name || !signupForm.email) { setAuthError("Please fill in your name and email."); return; }
     setAuthLoading(true);
-    try {
-      const res = await fetch("http://localhost:3000/api/auth/signup", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(signupForm),
-      });
-      const data = await res.json();
-      if (!res.ok) { setAuthError(data.error); setAuthLoading(false); return; }
-      setCurrentUser({ ...data.user, emailVerified: false, phoneVerified: false, loyaltyPoints: 0, referralCode: generateReferralCode(signupForm.name) });
-      setUserToken(data.token);
-      // Send email OTP
-      await sendOtp("email", signupForm.email);
-      setAuthStep("otp-email");
-    } catch { setAuthError("Connection error. Please try again."); }
+    const user = { id: `u_${Date.now()}`, name: signupForm.name, email: signupForm.email, phone: signupForm.phone };
+    setCurrentUser({ ...user, emailVerified: false, phoneVerified: false, loyaltyPoints: 0, referralCode: generateReferralCode(signupForm.name) });
+    setUserToken(`tok_${Date.now()}`);
+    await sendOtp("email", signupForm.email);
+    setAuthStep("otp-email");
     setAuthLoading(false);
   };
 
   const handleGoogleLogin = async () => {
     setAuthError("");
     setAuthLoading(true);
-    try {
-      // Mock Google login — in production, use Google Identity Services
-      const mockEmail = `user${Date.now()}@gmail.com`;
-      const mockName = "Google User";
-      const res = await fetch("http://localhost:3000/api/auth/google", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ googleToken: "mock-token", name: mockName, email: mockEmail }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setAuthError(data.error); setAuthLoading(false); return; }
-      setCurrentUser({ ...data.user, emailVerified: true, phoneVerified: false, loyaltyPoints: 0, referralCode: generateReferralCode(data.user.name || "User") });
-      setUserToken(data.token);
-      setEmailVerified(true);
-      if (data.needsPhone) {
-        setAuthStep("add-phone");
-      } else {
-        setAuthStep("otp-phone");
-        await sendOtp("phone", data.user.phone);
-      }
-    } catch { setAuthError("Connection error. Please try again."); }
+    // Client-side Google mock — in production, integrate Google Identity Services
+    const mockEmail = `user${Date.now()}@gmail.com`;
+    const mockName = "Google User";
+    const user = { id: `g_${Date.now()}`, name: mockName, email: mockEmail, phone: "" };
+    setCurrentUser({ ...user, emailVerified: true, phoneVerified: false, loyaltyPoints: 0, referralCode: generateReferralCode(mockName) });
+    setUserToken(`tok_${Date.now()}`);
+    setEmailVerified(true);
+    setAuthStep("add-phone");
     setAuthLoading(false);
   };
 
@@ -966,52 +950,38 @@ export default function App() {
     setOtpChannel(channel);
     setOtpTarget(value);
     setOtpInput("");
-    setDevOtp("");
-    try {
-      const res = await fetch("http://localhost:3000/api/auth/send-otp", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel, value }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setAuthError(data.error); return; }
-      if (data.devOtp) setDevOtp(data.devOtp);
-      showToast(`OTP sent to your ${channel}`, "success");
-    } catch { setAuthError("Failed to send OTP. Please try again."); }
+    const otp = generateOtp();
+    setDevOtp(otp);
+    showToast(`OTP sent to your ${channel}: ${otp}`, "success");
   };
 
   const verifyOtp = async () => {
     setAuthError("");
     setAuthLoading(true);
-    try {
-      const res = await fetch("http://localhost:3000/api/auth/verify-otp", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel: otpChannel, value: otpTarget, code: otpInput }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setAuthError(data.error); setAuthLoading(false); return; }
-      if (data.verified) {
-        if (otpChannel === "email") {
-          setEmailVerified(true);
-          setCurrentUser(prev => prev ? { ...prev, emailVerified: true } : null);
-          await sendOtp("phone", currentUser?.phone || signupForm.phone);
-          setAuthStep("otp-phone");
-        } else {
-          setPhoneVerified(true);
-          setCurrentUser(prev => prev ? { ...prev, phoneVerified: true } : null);
-          showToast("Account verified! Welcome to NaijaBasket 🎉", "success");
-          const pending = pendingCartAction;
-          resetAuthModal();
-          if (pending) {
-            if (pending.type === "single") {
-              doAddToCart(pending.productId, pending.variantId);
-            } else {
-              doAddPackageToCart(pending.pkg, pending.items);
-            }
-            setPendingCartAction(null);
+    if (otpInput === devOtp) {
+      if (otpChannel === "email") {
+        setEmailVerified(true);
+        setCurrentUser(prev => prev ? { ...prev, emailVerified: true } : null);
+        await sendOtp("phone", currentUser?.phone || signupForm.phone);
+        setAuthStep("otp-phone");
+      } else {
+        setPhoneVerified(true);
+        setCurrentUser(prev => prev ? { ...prev, phoneVerified: true } : null);
+        showToast("Account verified! Welcome to NaijaBasket 🎉", "success");
+        const pending = pendingCartAction;
+        resetAuthModal();
+        if (pending) {
+          if (pending.type === "single") {
+            doAddToCart(pending.productId, pending.variantId);
+          } else {
+            doAddPackageToCart(pending.pkg, pending.items);
           }
+          setPendingCartAction(null);
         }
       }
-    } catch { setAuthError("Connection error. Please try again."); }
+    } else {
+      setAuthError("Invalid OTP. Please try again.");
+    }
     setAuthLoading(false);
   };
 
