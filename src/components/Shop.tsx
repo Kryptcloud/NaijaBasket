@@ -14,6 +14,7 @@ interface Product {
   category: string;
   desc: string;
   img: string;
+  imgUrl?: string;
   variants: ProductVariant[];
   inStock: boolean;
   brands?: string[];
@@ -93,6 +94,8 @@ interface ShopProps {
   getProductRating: (productId: number) => { avg: number; count: number };
   onReview: (productId: number) => void;
   currentUser: UserAccount | null;
+  wishlist: number[];
+  onToggleWishlist: (productId: number) => void;
 }
 
 export function Shop({
@@ -100,11 +103,14 @@ export function Shop({
   cart, cartCount, cartTotal, onAddToCart, onAddPackage, onEditPackage,
   onNavigate, darkMode, calcPackagePrice, isPackageAvailable, showToast,
   flashDeal, dealCountdown, getProductRating, onReview, currentUser,
+  wishlist, onToggleWishlist,
 }: ShopProps) {
   const [selectedVariants, setSelectedVariants] = useState<Record<number, string>>({});
   const [selectedBrands, setSelectedBrands] = useState<Record<number, string>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedPkg, setExpandedPkg] = useState<string | null>(null);
+  const [viewProduct, setViewProduct] = useState<Product | null>(null);
+  const [sortBy, setSortBy] = useState<string>("default");
 
   const V = {
     bg: "var(--bg-primary)", bgCard: "var(--bg-card)", bgSecondary: "var(--bg-secondary)",
@@ -125,6 +131,16 @@ export function Shop({
     if (selectedCategory === "all") return true;
     if (isPackageCategory) return false;
     return p.category === selectedCategory;
+  }).sort((a, b) => {
+    const va = a.variants[0], vb = b.variants[0];
+    if (sortBy === "price-low") return (va?.price || 0) - (vb?.price || 0);
+    if (sortBy === "price-high") return (vb?.price || 0) - (va?.price || 0);
+    if (sortBy === "name") return a.name.localeCompare(b.name);
+    if (sortBy === "rating") {
+      const ra = getProductRating(a.id).avg, rb = getProductRating(b.id).avg;
+      return rb - ra;
+    }
+    return 0;
   });
 
   const filteredPackages = packages.filter(pkg => {
@@ -147,9 +163,10 @@ export function Shop({
           <div className="nb-hero-badges" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" as const }}>
             <span className="nb-hero-badge" style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(10px)", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600, color: "#fff", display: "flex", alignItems: "center", gap: 4 }}>✓ Verified sellers</span>
             <span className="nb-hero-badge" style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(10px)", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600, color: "#fff" }}>📦 Next-day delivery</span>
+            <span className="nb-hero-badge" style={{ background: "rgba(255,215,0,0.3)", backdropFilter: "blur(10px)", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 700, color: "#FFE066" }}>🎉 ₦500 OFF first order!</span>
           </div>
-          <h1 style={{ fontSize: "clamp(24px, 5vw, 36px)", fontWeight: 800, color: "#fff", margin: "0 0 8px", lineHeight: 1.2 }}>Fresh Foodstuffs,<br />Delivered to Your Door</h1>
-          <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 15, margin: "0 0 20px", maxWidth: 500, lineHeight: 1.5 }}>From the markets of Aba to your kitchen — rice, beans, garri, oils, proteins, soups & more. Save with our <strong>Soup Packs, Stew Packs & Home Packages</strong>.</p>
+          <h1 style={{ fontSize: "clamp(24px, 5vw, 36px)", fontWeight: 800, color: "#fff", margin: "0 0 8px", lineHeight: 1.2 }}>Buy Foodstuffs at<br />Market Price, Online</h1>
+          <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 15, margin: "0 0 20px", maxWidth: 500, lineHeight: 1.5 }}>Skip the stress of market runs. Rice, beans, garri, oils, proteins & more — delivered fresh to your doorstep. <strong>Save up to 5% with our Soup, Stew & Home Packs</strong>.</p>
           <div className="nb-hero-buttons" style={{ display: "flex", gap: 10, flexWrap: "wrap" as const }}>
             <button onClick={() => onCategoryChange("soup-packs")} style={{ background: "rgba(255,255,255,0.95)", color: "#2D6A4F", border: "none", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }}>🍲 Soup Packs</button>
             <button onClick={() => onCategoryChange("stew-packs")} style={{ background: "rgba(255,255,255,0.25)", backdropFilter: "blur(10px)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>🫕 Stew Packs</button>
@@ -162,9 +179,9 @@ export function Shop({
       {/* ===== SOCIAL PROOF ===== */}
       <div className="nb-social-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 24 }}>
         {[
-          { icon: "🛡️", label: "2K+", sub: "Verified Sellers" },
-          { icon: "⭐", label: "4.8/5", sub: "Customer Rating" },
-          { icon: "🚛", label: "24hrs", sub: "Within Aba" },
+          { icon: "🧺", label: "50+", sub: "Products Available" },
+          { icon: "📦", label: "15+", sub: "Ready-Made Packs" },
+          { icon: "🚛", label: "Next Day", sub: "Delivery in Aba" },
           { icon: "💰", label: "Up to 5%", sub: "Pack Savings" },
         ].map((s, i) => (
           <div key={i} style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 12, padding: "14px 12px", textAlign: "center" }}>
@@ -341,6 +358,18 @@ export function Shop({
         <>
           {searchQuery && <p style={{ color: V.textMuted, fontSize: 13, marginBottom: 12 }}>{filteredProducts.length} result{filteredProducts.length !== 1 ? "s" : ""} for "{searchQuery}"</p>}
 
+          {/* Sort Controls */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <p style={{ fontSize: 13, color: V.textMuted, margin: 0 }}>{filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}</p>
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ padding: "7px 12px", borderRadius: 8, border: `1px solid ${V.borderSubtle}`, background: V.bgCard, color: V.text, fontSize: 12, fontWeight: 600, cursor: "pointer", outline: "none" }}>
+              <option value="default">Sort: Default</option>
+              <option value="price-low">Price: Low → High</option>
+              <option value="price-high">Price: High → Low</option>
+              <option value="name">Name: A → Z</option>
+              <option value="rating">Rating: Best First</option>
+            </select>
+          </div>
+
           <div className="nb-product-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14 }}>
             {filteredProducts.map(p => {
               const selVariant = selectedVariants[p.id] || p.variants[0]?.id;
@@ -351,14 +380,24 @@ export function Shop({
               return (
                 <div key={p.id} className="nb-card" style={{
                   background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 14,
-                  padding: 18, transition: "all 0.2s", display: "flex", flexDirection: "column",
+                  overflow: "hidden", transition: "all 0.2s", display: "flex", flexDirection: "column",
                 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                    <div style={{ fontSize: 38, lineHeight: 1 }}>{p.img}</div>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: variant.stock > 10 ? "var(--color-success-bg)" : variant.stock > 0 ? "var(--color-warning-bg)" : "var(--color-danger-bg)", color: variant.stock > 10 ? V.success : variant.stock > 0 ? V.warning : V.danger }}>
+                  {/* Product Image */}
+                  <div onClick={() => setViewProduct(p)} style={{ position: "relative", width: "100%", height: 160, background: V.bgSecondary, overflow: "hidden", cursor: "pointer" }}>
+                    {p.imgUrl ? (
+                      <img src={p.imgUrl} alt={p.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 56 }}>{p.img}</div>
+                    )}
+                    <span style={{ position: "absolute", top: 8, right: 8, fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: variant.stock > 10 ? "var(--color-success-bg)" : variant.stock > 0 ? "var(--color-warning-bg)" : "var(--color-danger-bg)", color: variant.stock > 10 ? V.success : variant.stock > 0 ? V.warning : V.danger }}>
                       {variant.stock > 10 ? "In Stock" : variant.stock > 0 ? `Only ${variant.stock}` : "Out of Stock"}
                     </span>
+                    <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} style={{ position: "absolute", top: 8, left: 8, background: "rgba(255,255,255,0.85)", border: "none", borderRadius: "50%", width: 32, height: 32, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {wishlist.includes(p.id) ? "❤️" : "🤍"}
+                    </button>
                   </div>
+
+                  <div style={{ padding: 16, display: "flex", flexDirection: "column", flex: 1 }}>
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: V.text, margin: "0 0 3px" }}>{p.name}</h3>
                   <p style={{ fontSize: 12, color: V.textMuted, margin: "0 0 6px", lineHeight: 1.4 }}>{p.desc}</p>
 
@@ -428,6 +467,7 @@ export function Shop({
                       {variant.stock === 0 ? "Sold Out" : inCart ? `✓ In Basket (${inCart.quantity})` : "🧺 Add"}
                     </button>
                   </div>
+                  </div>{/* end padding div */}
                 </div>
               );
             })}
@@ -445,13 +485,16 @@ export function Shop({
 
       {/* ===== TRUST SIGNALS ===== */}
       <div style={{ marginTop: 40, background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 16, padding: "24px 20px", textAlign: "center" }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: V.primary, marginBottom: 16 }}>Why NaijaBasket?</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: V.primary, marginBottom: 6 }}>Why NaijaBasket?</h3>
+        <p style={{ fontSize: 12, color: V.textMuted, margin: "0 0 16px" }}>Minimum order: ₦5,000 • Free delivery within Aba</p>
         <div className="nb-trust-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16 }}>
           {[
             { icon: "🌾", title: "Farm Fresh", desc: "Direct from farms & markets" },
             { icon: "📦", title: "Ready Packs", desc: "Soup, stew & home bundles" },
             { icon: "🔒", title: "Secure Pay", desc: "Paystack & crypto accepted" },
-            { icon: "🚚", title: "Fast Delivery", desc: "Free within Aba" },
+            { icon: "🚚", title: "Fast Delivery", desc: "Next-day within Aba" },
+            { icon: "💬", title: "WhatsApp Support", desc: "Quick order via chat" },
+            { icon: "⚡", title: "Same-Day Option", desc: "Express delivery available" },
           ].map((t, i) => (
             <div key={i}>
               <div style={{ fontSize: 28 }}>{t.icon}</div>
@@ -461,6 +504,76 @@ export function Shop({
           ))}
         </div>
       </div>
+
+      {/* ===== PRODUCT DETAIL MODAL ===== */}
+      {viewProduct && (() => {
+        const p = viewProduct;
+        const selVariant = selectedVariants[p.id] || p.variants[0]?.id;
+        const variant = p.variants.find(v => v.id === selVariant) || p.variants[0];
+        const inCart = cart.find(c => c.productId === p.id && c.variantId === (variant?.id || ""));
+        const { avg, count } = getProductRating(p.id);
+        return (
+          <div onClick={() => setViewProduct(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: V.bgCard, borderRadius: 20, maxWidth: 500, width: "100%", maxHeight: "90vh", overflow: "auto", position: "relative" }}>
+              <button onClick={() => setViewProduct(null)} style={{ position: "absolute", top: 12, right: 12, background: "rgba(0,0,0,0.5)", color: "#fff", border: "none", borderRadius: "50%", width: 32, height: 32, fontSize: 16, cursor: "pointer", zIndex: 2 }}>✕</button>
+              <div style={{ width: "100%", height: 260, background: V.bgSecondary, overflow: "hidden", borderRadius: "20px 20px 0 0" }}>
+                {p.imgUrl ? (
+                  <img src={p.imgUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 80 }}>{p.img}</div>
+                )}
+              </div>
+              <div style={{ padding: 24 }}>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: V.text, margin: "0 0 4px" }}>{p.name}</h2>
+                <p style={{ fontSize: 14, color: V.textMuted, margin: "0 0 12px", lineHeight: 1.5 }}>{p.desc}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
+                  <div style={{ display: "flex", gap: 1 }}>{[1,2,3,4,5].map(s => <span key={s} style={{ fontSize: 16, color: s <= Math.round(avg) ? "#F5A623" : V.border }}>★</span>)}</div>
+                  <span style={{ fontSize: 13, color: V.textMuted }}>{avg > 0 ? `${avg} (${count} review${count !== 1 ? "s" : ""})` : "No reviews yet"}</span>
+                </div>
+                {p.brands && p.brands.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: V.textMuted, marginBottom: 4, display: "block" }}>Brand</label>
+                    <select value={selectedBrands[p.id] || p.brands[0]} onChange={e => setSelectedBrands(prev => ({ ...prev, [p.id]: e.target.value }))} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${V.borderSubtle}`, background: V.bgSecondary, color: V.text, fontSize: 14, fontWeight: 600, cursor: "pointer", outline: "none" }}>
+                      {p.brands.map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                  </div>
+                )}
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: V.textMuted, marginBottom: 6, display: "block" }}>Size</label>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {p.variants.map(v => (
+                      <button key={v.id} onClick={() => setSelectedVariants(prev => ({ ...prev, [p.id]: v.id }))} style={{
+                        padding: "10px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                        background: selVariant === v.id ? "var(--bg-accent-muted)" : V.bgSecondary,
+                        border: selVariant === v.id ? `2px solid ${V.primary}` : `1px solid ${V.borderSubtle}`,
+                        color: selVariant === v.id ? V.primary : V.textMuted,
+                      }}>
+                        {v.size} <span style={{ display: "block", fontSize: 11, fontWeight: 400 }}>{v.unit} — ₦{v.price.toLocaleString()}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {variant && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: 26, fontWeight: 800, color: V.primary }}>₦{variant.price.toLocaleString()}</div>
+                      <div style={{ fontSize: 12, color: V.textMuted }}>{variant.stock > 10 ? "In Stock" : variant.stock > 0 ? `Only ${variant.stock} left` : "Out of Stock"}</div>
+                    </div>
+                    <button onClick={() => { if (variant.stock > 0) { onAddToCart(p.id, variant.id, p.brands ? (selectedBrands[p.id] || p.brands[0]) : undefined); showToast(`${p.name} added to basket!`, "success"); } }} disabled={variant.stock === 0} style={{
+                      background: variant.stock === 0 ? V.border : inCart ? "var(--color-success)" : "var(--gradient-primary)",
+                      color: "#fff", border: "none", borderRadius: 12, padding: "14px 24px",
+                      fontWeight: 700, fontSize: 15, cursor: variant.stock === 0 ? "not-allowed" : "pointer",
+                      boxShadow: variant.stock > 0 ? "0 2px 10px rgba(45,106,79,0.25)" : "none",
+                    }}>
+                      {variant.stock === 0 ? "Sold Out" : inCart ? `✓ In Basket (${inCart.quantity})` : "🧺 Add to Basket"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ===== FLOATING CART BAR ===== */}
       {cartCount > 0 && (

@@ -16,6 +16,7 @@ interface Product {
   category: string;
   desc: string;
   img: string;
+  imgUrl?: string;
   variants: ProductVariant[];
   inStock: boolean;
   brands?: string[];
@@ -159,83 +160,83 @@ const CATEGORIES = [
 
 const INITIAL_PRODUCTS: Product[] = [
   // Grains
-  { id: 1, name: "Rice (Local)", category: "grains", desc: "Premium Nigerian long-grain rice", img: "🌾",
+  { id: 1, name: "Rice (Local)", category: "grains", desc: "Premium Nigerian long-grain rice", img: "🌾", imgUrl: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=300&fit=crop&q=80",
     brands: ["Abakaliki", "Ofada", "Afikpo", "Ebonyi"],
     variants: [
       { id: "1-q", size: "Quarter Bag", unit: "12.5kg", price: 15000, stock: 50 },
       { id: "1-h", size: "Half Bag", unit: "25kg", price: 28000, stock: 40 },
       { id: "1-f", size: "Full Bag", unit: "50kg", price: 52000, stock: 30 },
     ], inStock: true },
-  { id: 2, name: "Rice (Foreign)", category: "grains", desc: "Imported parboiled rice, premium quality", img: "🌾",
+  { id: 2, name: "Rice (Foreign)", category: "grains", desc: "Imported parboiled rice, premium quality", img: "🌾", imgUrl: "https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=400&h=300&fit=crop&q=80",
     brands: ["Mama Gold", "Royal Stallion", "Caprice", "Stallion"],
     variants: [
       { id: "2-q", size: "Quarter Bag", unit: "12.5kg", price: 19000, stock: 35 },
       { id: "2-h", size: "Half Bag", unit: "25kg", price: 36000, stock: 25 },
       { id: "2-f", size: "Full Bag", unit: "50kg", price: 68000, stock: 20 },
     ], inStock: true },
-  { id: 3, name: "Beans (Brown)", category: "grains", desc: "Clean, stone-free honey beans", img: "🫘",
+  { id: 3, name: "Beans (Brown)", category: "grains", desc: "Clean, stone-free honey beans", img: "🫘", imgUrl: "https://images.unsplash.com/photo-1515543904379-3d757abe528d?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "3-q", size: "Quarter Bag", unit: "12.5kg", price: 12000, stock: 45 },
       { id: "3-h", size: "Half Bag", unit: "25kg", price: 22000, stock: 30 },
       { id: "3-f", size: "Full Bag", unit: "50kg", price: 42000, stock: 20 },
     ], inStock: true },
-  { id: 4, name: "Beans (White)", category: "grains", desc: "Premium white beans for moi-moi & akara", img: "🫘",
+  { id: 4, name: "Beans (White)", category: "grains", desc: "Premium white beans for moi-moi & akara", img: "🫘", imgUrl: "https://images.unsplash.com/photo-1506807803488-8eafc15316c7?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "4-q", size: "Quarter Bag", unit: "12.5kg", price: 11000, stock: 40 },
       { id: "4-h", size: "Half Bag", unit: "25kg", price: 20000, stock: 25 },
       { id: "4-f", size: "Full Bag", unit: "50kg", price: 38000, stock: 15 },
     ], inStock: true },
-  { id: 5, name: "Maize (Corn)", category: "grains", desc: "Dried yellow maize, perfect for pap & feed", img: "🌽",
+  { id: 5, name: "Maize (Corn)", category: "grains", desc: "Dried yellow maize, perfect for pap & feed", img: "🌽", imgUrl: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "5-q", size: "Quarter Bag", unit: "12.5kg", price: 7000, stock: 60 },
       { id: "5-h", size: "Half Bag", unit: "25kg", price: 13000, stock: 40 },
       { id: "5-f", size: "Full Bag", unit: "50kg", price: 24000, stock: 25 },
     ], inStock: true },
-  { id: 6, name: "Millet", category: "grains", desc: "Quality millet grain for fura & porridge", img: "🌾",
+  { id: 6, name: "Millet", category: "grains", desc: "Quality millet grain for fura & porridge", img: "🌾", imgUrl: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "6-q", size: "Quarter Bag", unit: "12.5kg", price: 8000, stock: 30 },
       { id: "6-h", size: "Half Bag", unit: "25kg", price: 15000, stock: 20 },
     ], inStock: true },
 
   // Tubers
-  { id: 7, name: "Garri (White)", category: "tubers", desc: "Premium processed white garri", img: "🥣",
+  { id: 7, name: "Garri (White)", category: "tubers", desc: "Premium processed white garri", img: "🥣", imgUrl: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "7-p", size: "Paint Bucket", unit: "~4kg", price: 3500, stock: 80 },
       { id: "7-h", size: "Half Bag", unit: "25kg", price: 15000, stock: 40 },
       { id: "7-f", size: "Full Bag", unit: "50kg", price: 28000, stock: 25 },
     ], inStock: true },
-  { id: 8, name: "Garri (Yellow)", category: "tubers", desc: "Quality yellow garri from Imo", img: "🥣",
+  { id: 8, name: "Garri (Yellow)", category: "tubers", desc: "Quality yellow garri from Imo", img: "🥣", imgUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "8-p", size: "Paint Bucket", unit: "~4kg", price: 4000, stock: 70 },
       { id: "8-h", size: "Half Bag", unit: "25kg", price: 18000, stock: 35 },
       { id: "8-f", size: "Full Bag", unit: "50kg", price: 33000, stock: 20 },
     ], inStock: true },
-  { id: 9, name: "Yam", category: "tubers", desc: "Fresh quality yam tubers from the North", img: "🥔",
+  { id: 9, name: "Yam", category: "tubers", desc: "Fresh quality yam tubers from the North", img: "🥔", imgUrl: "https://images.unsplash.com/photo-1590005354167-6da97870c757?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "9-s", size: "Small Tuber", unit: "~2kg", price: 2500, stock: 100 },
       { id: "9-m", size: "Medium Tuber", unit: "~4kg", price: 4500, stock: 80 },
       { id: "9-l", size: "Large Tuber", unit: "~6kg", price: 7000, stock: 50 },
     ], inStock: true },
-  { id: 10, name: "Potatoes (Sweet)", category: "tubers", desc: "Fresh sweet potatoes, farm direct", img: "🍠",
+  { id: 10, name: "Potatoes (Sweet)", category: "tubers", desc: "Fresh sweet potatoes, farm direct", img: "🍠", imgUrl: "https://images.unsplash.com/photo-1596097635121-14b63a7df6a2?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "10-p", size: "Paint Bucket", unit: "~5kg", price: 3000, stock: 60 },
       { id: "10-b", size: "Bag", unit: "~25kg", price: 12000, stock: 30 },
     ], inStock: true },
 
   // Oils
-  { id: 11, name: "Palm Oil", category: "oils", desc: "Fresh red palm oil from Abia State", img: "🫒",
+  { id: 11, name: "Palm Oil", category: "oils", desc: "Fresh red palm oil from Abia State", img: "🫒", imgUrl: "https://images.unsplash.com/photo-1474979266404-7f28a4b6a36a?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "11-1", size: "1 Litre", unit: "1L", price: 1800, stock: 100 },
       { id: "11-5", size: "5 Litres", unit: "5L", price: 8500, stock: 60 },
       { id: "11-25", size: "25L Jerrycan", unit: "25L", price: 40000, stock: 25 },
     ], inStock: true },
-  { id: 12, name: "Groundnut Oil", category: "oils", desc: "Pure groundnut oil, no additives", img: "🥜",
+  { id: 12, name: "Groundnut Oil", category: "oils", desc: "Pure groundnut oil, no additives", img: "🥜", imgUrl: "https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "12-1", size: "1 Litre", unit: "1L", price: 2200, stock: 80 },
       { id: "12-5", size: "5 Litres", unit: "5L", price: 10000, stock: 40 },
       { id: "12-25", size: "25L Jerrycan", unit: "25L", price: 48000, stock: 15 },
     ], inStock: true },
-  { id: 13, name: "Vegetable Oil", category: "oils", desc: "Premium vegetable cooking oil", img: "🍶",
+  { id: 13, name: "Vegetable Oil", category: "oils", desc: "Premium vegetable cooking oil", img: "🍶", imgUrl: "https://images.unsplash.com/photo-1474979266404-7f28a4b6a36a?w=400&h=300&fit=crop&q=80",
     brands: ["Devon King's", "Turkey", "Power Oil", "Grand Pure"],
     variants: [
       { id: "13-5", size: "5 Litres", unit: "5L", price: 9000, stock: 50 },
@@ -243,81 +244,81 @@ const INITIAL_PRODUCTS: Product[] = [
     ], inStock: true },
 
   // Vegetables
-  { id: 14, name: "Tomatoes", category: "vegetables", desc: "Fresh ripe tomatoes, market quality", img: "🍅",
+  { id: 14, name: "Tomatoes", category: "vegetables", desc: "Fresh ripe tomatoes, market quality", img: "🍅", imgUrl: "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "14-b", size: "Basket (Small)", unit: "~15kg", price: 8000, stock: 40 },
       { id: "14-B", size: "Basket (Big)", unit: "~30kg", price: 15000, stock: 25 },
     ], inStock: true },
-  { id: 15, name: "Onions", category: "vegetables", desc: "Fresh dry onions, large size", img: "🧅",
+  { id: 15, name: "Onions", category: "vegetables", desc: "Fresh dry onions, large size", img: "🧅", imgUrl: "https://images.unsplash.com/photo-1518977956812-cd3dbadaaf31?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "15-p", size: "Paint Bucket", unit: "~5kg", price: 4000, stock: 50 },
       { id: "15-b", size: "Bag", unit: "~50kg", price: 35000, stock: 20 },
     ], inStock: true },
-  { id: 16, name: "Pepper (Fresh)", category: "vegetables", desc: "Fresh scotch bonnet pepper (ata rodo)", img: "🌶️",
+  { id: 16, name: "Pepper (Fresh)", category: "vegetables", desc: "Fresh scotch bonnet pepper (ata rodo)", img: "🌶️", imgUrl: "https://images.unsplash.com/photo-1583119022894-919a68a60cb3?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "16-p", size: "Paint Bucket", unit: "~4kg", price: 5000, stock: 60 },
       { id: "16-b", size: "Basket", unit: "~20kg", price: 18000, stock: 25 },
     ], inStock: true },
-  { id: 17, name: "Okra (Dried)", category: "vegetables", desc: "Dried okra for draw soup", img: "🥒",
+  { id: 17, name: "Okra (Dried)", category: "vegetables", desc: "Dried okra for draw soup", img: "🥒", imgUrl: "https://images.unsplash.com/photo-1425543103986-22abb7d7e8d2?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "17-m", size: "Mudu", unit: "~1kg", price: 3000, stock: 80 },
       { id: "17-p", size: "Paint Bucket", unit: "~4kg", price: 10000, stock: 40 },
     ], inStock: true },
   // New vegetables for packages
-  { id: 35, name: "Oha Leaves", category: "vegetables", desc: "Fresh oha leaves for traditional soup", img: "🥬",
+  { id: 35, name: "Oha Leaves", category: "vegetables", desc: "Fresh oha leaves for traditional soup", img: "🥬", imgUrl: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "35-s", size: "Small Bundle", unit: "~200g", price: 1500, stock: 60 },
       { id: "35-l", size: "Large Bundle", unit: "~500g", price: 3500, stock: 30 },
     ], inStock: true },
-  { id: 36, name: "Ugu (Pumpkin Leaves)", category: "vegetables", desc: "Fresh ugu leaves, farm picked", img: "🥬",
+  { id: 36, name: "Ugu (Pumpkin Leaves)", category: "vegetables", desc: "Fresh ugu leaves, farm picked", img: "🥬", imgUrl: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "36-s", size: "Small Bundle", unit: "~300g", price: 800, stock: 80 },
       { id: "36-l", size: "Large Bundle", unit: "~1kg", price: 2000, stock: 40 },
     ], inStock: true },
-  { id: 37, name: "Bitter Leaf", category: "vegetables", desc: "Fresh washed bitter leaf, ready to cook", img: "🥬",
+  { id: 37, name: "Bitter Leaf", category: "vegetables", desc: "Fresh washed bitter leaf, ready to cook", img: "🥬", imgUrl: "https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "37-s", size: "Small Bundle", unit: "~300g", price: 1000, stock: 70 },
       { id: "37-l", size: "Large Bundle", unit: "~1kg", price: 2500, stock: 35 },
     ], inStock: true },
-  { id: 38, name: "Spinach (Green)", category: "vegetables", desc: "Fresh green amaranth / efo tete", img: "🥬",
+  { id: 38, name: "Spinach (Green)", category: "vegetables", desc: "Fresh green amaranth / efo tete", img: "🥬", imgUrl: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "38-s", size: "Small Bundle", unit: "~300g", price: 500, stock: 100 },
       { id: "38-l", size: "Large Bundle", unit: "~1kg", price: 1200, stock: 50 },
     ], inStock: true },
 
   // Proteins
-  { id: 18, name: "Eggs (Crate)", category: "proteins", desc: "Fresh farm eggs, 30 per crate", img: "🥚",
+  { id: 18, name: "Eggs (Crate)", category: "proteins", desc: "Fresh farm eggs, 30 per crate", img: "🥚", imgUrl: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "18-1", size: "1 Crate", unit: "30 eggs", price: 3500, stock: 100 },
       { id: "18-5", size: "5 Crates", unit: "150 eggs", price: 16500, stock: 50 },
     ], inStock: true },
-  { id: 19, name: "Crayfish", category: "proteins", desc: "Dried crayfish, premium grade", img: "🦐",
+  { id: 19, name: "Crayfish", category: "proteins", desc: "Dried crayfish, premium grade", img: "🦐", imgUrl: "https://images.unsplash.com/photo-1565680532043-4f03e4c77aac?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "19-m", size: "Mudu", unit: "~1kg", price: 5000, stock: 70 },
       { id: "19-p", size: "Paint Bucket", unit: "~4kg", price: 18000, stock: 35 },
       { id: "19-b", size: "Bag", unit: "~25kg", price: 100000, stock: 10 },
     ], inStock: true },
-  { id: 20, name: "Stockfish", category: "proteins", desc: "Imported stockfish, assorted sizes", img: "🐟",
+  { id: 20, name: "Stockfish", category: "proteins", desc: "Imported stockfish, assorted sizes", img: "🐟", imgUrl: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "20-s", size: "Small Pack", unit: "~500g", price: 6000, stock: 50 },
       { id: "20-l", size: "Large Pack", unit: "~2kg", price: 22000, stock: 25 },
     ], inStock: true },
-  { id: 21, name: "Dried Fish", category: "proteins", desc: "Smoked catfish & dried fish assorted", img: "🐟",
+  { id: 21, name: "Dried Fish", category: "proteins", desc: "Smoked catfish & dried fish assorted", img: "🐟", imgUrl: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "21-s", size: "Small Bundle", unit: "~500g", price: 4000, stock: 60 },
       { id: "21-l", size: "Large Bundle", unit: "~2kg", price: 14000, stock: 30 },
     ], inStock: true },
-  { id: 22, name: "Chicken", category: "proteins", desc: "Whole frozen chicken, cleaned & ready", img: "🍗",
+  { id: 22, name: "Chicken", category: "proteins", desc: "Whole frozen chicken, cleaned & ready", img: "🍗", imgUrl: "https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "22-1", size: "1 Chicken", unit: "~1.5kg", price: 5500, stock: 40 },
       { id: "22-c", size: "Carton (10)", unit: "~15kg", price: 50000, stock: 15 },
     ], inStock: true },
-  { id: 23, name: "Meat (Beef)", category: "proteins", desc: "Fresh beef, market cut", img: "🥩",
+  { id: 23, name: "Meat (Beef)", category: "proteins", desc: "Fresh beef, market cut", img: "🥩", imgUrl: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "23-1", size: "1 kg", unit: "1kg", price: 5000, stock: 50 },
       { id: "23-5", size: "5 kg", unit: "5kg", price: 23000, stock: 25 },
     ], inStock: true },
-  { id: 41, name: "Fresh Fish", category: "proteins", desc: "Fresh catfish & tilapia, cleaned and gutted", img: "🐟",
+  { id: 41, name: "Fresh Fish", category: "proteins", desc: "Fresh catfish & tilapia, cleaned and gutted", img: "🐟", imgUrl: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "41-s", size: "Small (2-3 fish)", unit: "~1kg", price: 4000, stock: 60 },
       { id: "41-m", size: "Medium (4-5 fish)", unit: "~2.5kg", price: 9000, stock: 40 },
@@ -325,123 +326,123 @@ const INITIAL_PRODUCTS: Product[] = [
     ], inStock: true },
 
   // Soups & Seeds
-  { id: 24, name: "Egusi (Melon)", category: "soups", desc: "Clean shelled egusi seeds", img: "🥣",
+  { id: 24, name: "Egusi (Melon)", category: "soups", desc: "Clean shelled egusi seeds", img: "🥣", imgUrl: "https://images.unsplash.com/photo-1609501676725-7186f017a4b7?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "24-m", size: "Half Paint", unit: "~1.5kg", price: 5000, stock: 60 },
       { id: "24-p", size: "Paint Bucket", unit: "~6kg", price: 18000, stock: 30 },
       { id: "24-b", size: "Bag", unit: "~25kg", price: 70000, stock: 10 },
     ], inStock: true },
-  { id: 25, name: "Ogbono", category: "soups", desc: "Premium ogbono seeds for draw soup", img: "🥣",
+  { id: 25, name: "Ogbono", category: "soups", desc: "Premium ogbono seeds for draw soup", img: "🥣", imgUrl: "https://images.unsplash.com/photo-1609501676725-7186f017a4b7?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "25-m", size: "Mudu", unit: "~1kg", price: 6000, stock: 50 },
       { id: "25-p", size: "Paint Bucket", unit: "~4kg", price: 22000, stock: 20 },
     ], inStock: true },
 
   // Spices
-  { id: 26, name: "Ginger", category: "spices", desc: "Fresh dry ginger, strong aroma", img: "🧄",
+  { id: 26, name: "Ginger", category: "spices", desc: "Fresh dry ginger, strong aroma", img: "🧄", imgUrl: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "26-1", size: "1 kg", unit: "1kg", price: 3500, stock: 80 },
       { id: "26-p", size: "Paint Bucket", unit: "~5kg", price: 15000, stock: 30 },
     ], inStock: true },
-  { id: 27, name: "Garlic", category: "spices", desc: "Fresh garlic bulbs, imported", img: "🧄",
+  { id: 27, name: "Garlic", category: "spices", desc: "Fresh garlic bulbs, imported", img: "🧄", imgUrl: "https://images.unsplash.com/photo-1540148426945-6cf22a6b2571?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "27-1", size: "1 kg", unit: "1kg", price: 4000, stock: 60 },
       { id: "27-p", size: "Paint Bucket", unit: "~5kg", price: 18000, stock: 25 },
     ], inStock: true },
-  { id: 28, name: "Dawadawa (Locust Beans)", category: "spices", desc: "Traditional fermented locust beans", img: "🫘",
+  { id: 28, name: "Dawadawa (Locust Beans)", category: "spices", desc: "Traditional fermented locust beans", img: "🫘", imgUrl: "https://images.unsplash.com/photo-1515543904379-3d757abe528d?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "28-s", size: "Small Pack", unit: "~200g", price: 1500, stock: 100 },
       { id: "28-l", size: "Large Pack", unit: "~1kg", price: 6000, stock: 50 },
     ], inStock: true },
-  { id: 29, name: "Ogiri", category: "spices", desc: "Traditional fermented oil seed seasoning", img: "🫙",
+  { id: 29, name: "Ogiri", category: "spices", desc: "Traditional fermented oil seed seasoning", img: "🫙", imgUrl: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "29-s", size: "Small Wrap", unit: "~100g", price: 500, stock: 150 },
       { id: "29-l", size: "Large Wrap", unit: "~500g", price: 2000, stock: 80 },
     ], inStock: true },
   // New spices
-  { id: 39, name: "Seasoning Cubes", category: "spices", desc: "Maggi / Knorr assorted seasoning cubes", img: "🧂",
+  { id: 39, name: "Seasoning Cubes", category: "spices", desc: "Maggi / Knorr assorted seasoning cubes", img: "🧂", imgUrl: "https://images.unsplash.com/photo-1532768641073-503a250f9754?w=400&h=300&fit=crop&q=80",
     brands: ["Maggi", "Knorr", "Royco", "Star"],
     variants: [
       { id: "39-p", size: "Pack (50 cubes)", unit: "~250g", price: 2500, stock: 120 },
       { id: "39-c", size: "Carton", unit: "~2.5kg", price: 22000, stock: 30 },
     ], inStock: true },
-  { id: 40, name: "Salt", category: "spices", desc: "Fine table salt, iodized", img: "🧂",
+  { id: 40, name: "Salt", category: "spices", desc: "Fine table salt, iodized", img: "🧂", imgUrl: "https://images.unsplash.com/photo-1518110925495-5fe2fda0442c?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "40-1", size: "1 kg", unit: "1kg", price: 500, stock: 200 },
       { id: "40-b", size: "Bag (25kg)", unit: "25kg", price: 8000, stock: 30 },
     ], inStock: true },
 
   // Pasta & Flour
-  { id: 30, name: "Spaghetti", category: "pasta", desc: "Quality spaghetti pasta", img: "🍝",
+  { id: 30, name: "Spaghetti", category: "pasta", desc: "Quality spaghetti pasta", img: "🍝", imgUrl: "https://images.unsplash.com/photo-1551462147-37885acc36f1?w=400&h=300&fit=crop&q=80",
     brands: ["Golden Penny", "Dangote", "Honeywell"],
     variants: [
       { id: "30-p", size: "Pack (500g)", unit: "500g", price: 800, stock: 200 },
       { id: "30-c", size: "Carton (20 packs)", unit: "10kg", price: 14000, stock: 40 },
     ], inStock: true },
-  { id: 31, name: "Noodles", category: "pasta", desc: "Indomie & assorted noodles", img: "🍜",
+  { id: 31, name: "Noodles", category: "pasta", desc: "Indomie & assorted noodles", img: "🍜", imgUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=300&fit=crop&q=80",
     brands: ["Indomie", "Dangote", "Honeywell", "Minimie"],
     variants: [
       { id: "31-p", size: "Pack (single)", unit: "70g", price: 250, stock: 500 },
       { id: "31-c", size: "Carton (40 packs)", unit: "2.8kg", price: 9000, stock: 50 },
     ], inStock: true },
-  { id: 32, name: "Semolina", category: "pasta", desc: "Quality semolina flour for swallow", img: "🍚",
+  { id: 32, name: "Semolina", category: "pasta", desc: "Quality semolina flour for swallow", img: "🍚", imgUrl: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "32-1", size: "1 kg", unit: "1kg", price: 1500, stock: 80 },
       { id: "32-5", size: "5 kg", unit: "5kg", price: 7000, stock: 40 },
     ], inStock: true },
-  { id: 33, name: "Wheat Flour", category: "pasta", desc: "All-purpose wheat flour for baking", img: "🌾",
+  { id: 33, name: "Wheat Flour", category: "pasta", desc: "All-purpose wheat flour for baking", img: "🌾", imgUrl: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "33-h", size: "Half Bag", unit: "25kg", price: 18000, stock: 30 },
       { id: "33-f", size: "Full Bag", unit: "50kg", price: 34000, stock: 15 },
     ], inStock: true },
-  { id: 34, name: "Poundo Yam", category: "pasta", desc: "Instant poundo yam flour", img: "🥔",
+  { id: 34, name: "Poundo Yam", category: "pasta", desc: "Instant poundo yam flour", img: "🥔", imgUrl: "https://images.unsplash.com/photo-1590005354167-6da97870c757?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "34-1", size: "1 kg", unit: "1kg", price: 1800, stock: 70 },
       { id: "34-5", size: "5 kg", unit: "5kg", price: 8500, stock: 35 },
     ], inStock: true },
 
   // Salads
-  { id: 42, name: "Lettuce", category: "salads", desc: "Fresh crispy iceberg lettuce", img: "🥬",
+  { id: 42, name: "Lettuce", category: "salads", desc: "Fresh crispy iceberg lettuce", img: "🥬", imgUrl: "https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "42-s", size: "Small Head", unit: "~200g", price: 800, stock: 80 },
       { id: "42-l", size: "Large Head", unit: "~500g", price: 1500, stock: 50 },
     ], inStock: true },
-  { id: 43, name: "Cucumber", category: "salads", desc: "Fresh green cucumbers", img: "🥒",
+  { id: 43, name: "Cucumber", category: "salads", desc: "Fresh green cucumbers", img: "🥒", imgUrl: "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "43-3", size: "3 Pieces", unit: "~500g", price: 600, stock: 100 },
       { id: "43-6", size: "6 Pieces", unit: "~1kg", price: 1000, stock: 60 },
     ], inStock: true },
-  { id: 44, name: "Cabbage", category: "salads", desc: "Fresh green cabbage head", img: "🥬",
+  { id: 44, name: "Cabbage", category: "salads", desc: "Fresh green cabbage head", img: "🥬", imgUrl: "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "44-s", size: "Small Head", unit: "~500g", price: 500, stock: 80 },
       { id: "44-l", size: "Large Head", unit: "~1kg", price: 900, stock: 50 },
     ], inStock: true },
-  { id: 45, name: "Carrots", category: "salads", desc: "Fresh orange carrots, crunchy", img: "🥕",
+  { id: 45, name: "Carrots", category: "salads", desc: "Fresh orange carrots, crunchy", img: "🥕", imgUrl: "https://images.unsplash.com/photo-1447175008436-054170c2e979?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "45-s", size: "Small Bundle", unit: "~500g", price: 500, stock: 90 },
       { id: "45-l", size: "Large Bundle", unit: "~1kg", price: 900, stock: 60 },
     ], inStock: true },
-  { id: 46, name: "Green Pepper", category: "salads", desc: "Fresh bell peppers for salads", img: "🫑",
+  { id: 46, name: "Green Pepper", category: "salads", desc: "Fresh bell peppers for salads", img: "🫑", imgUrl: "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "46-s", size: "Small Pack", unit: "~300g", price: 600, stock: 70 },
       { id: "46-l", size: "Large Pack", unit: "~1kg", price: 1500, stock: 40 },
     ], inStock: true },
-  { id: 47, name: "Avocado", category: "salads", desc: "Ripe creamy avocados", img: "🥑",
+  { id: 47, name: "Avocado", category: "salads", desc: "Ripe creamy avocados", img: "🥑", imgUrl: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "47-3", size: "3 Pieces", unit: "~450g", price: 1200, stock: 60 },
       { id: "47-6", size: "6 Pieces", unit: "~900g", price: 2200, stock: 35 },
     ], inStock: true },
-  { id: 48, name: "Sweet Corn", category: "salads", desc: "Fresh sweet corn cobs", img: "🌽",
+  { id: 48, name: "Sweet Corn", category: "salads", desc: "Fresh sweet corn cobs", img: "🌽", imgUrl: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "48-3", size: "3 Cobs", unit: "~600g", price: 700, stock: 80 },
       { id: "48-6", size: "6 Cobs", unit: "~1.2kg", price: 1200, stock: 50 },
     ], inStock: true },
-  { id: 49, name: "Beetroot", category: "salads", desc: "Fresh beetroot, deep red", img: "🟣",
+  { id: 49, name: "Beetroot", category: "salads", desc: "Fresh beetroot, deep red", img: "🟣", imgUrl: "https://images.unsplash.com/photo-1593105544559-ecb03bf76f82?w=400&h=300&fit=crop&q=80",
     variants: [
       { id: "49-s", size: "Small Pack", unit: "~500g", price: 600, stock: 70 },
       { id: "49-l", size: "Large Pack", unit: "~1kg", price: 1000, stock: 40 },
     ], inStock: true },
-  { id: 50, name: "Salad Cream", category: "salads", desc: "Heinz / Bama salad cream dressing", img: "🥛",
+  { id: 50, name: "Salad Cream", category: "salads", desc: "Heinz / Bama salad cream dressing", img: "🥛", imgUrl: "https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400&h=300&fit=crop&q=80",
     brands: ["Heinz", "Bama", "Crosse & Blackwell"],
     variants: [
       { id: "50-s", size: "Small Bottle", unit: "285ml", price: 1500, stock: 60 },
@@ -635,10 +636,6 @@ const PACKAGES: FoodPackage[] = [
       { productId: 39, variantId: "39-c", quantity: 1, required: true },
       { productId: 40, variantId: "40-b", quantity: 1, required: true },
     ] },
-
-  // === SEASONAL (Coming Soon) ===
-  { id: "pkg-christmas", name: "Christmas Pack", desc: "Festive season food stock — rice, chicken, drinks & more", icon: "🎄", type: "seasonal", servings: "Family celebration", discount: 5, comingSoon: true, items: [] },
-  { id: "pkg-sallah", name: "Sallah Pack", desc: "Eid celebration essentials — ram provisions & spices", icon: "🌙", type: "seasonal", servings: "Family celebration", discount: 5, comingSoon: true, items: [] },
 ];
 
 // ============ PACKAGE HELPERS ============
@@ -740,9 +737,18 @@ export default function App() {
 
   // Navigation
   const [page, setPage] = useState<string>("shop");
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterDone, setNewsletterDone] = useState(false);
+  const [wishlist, setWishlist] = useState<number[]>(() => {
+    try { const saved = localStorage.getItem("nb_wishlist"); return saved ? JSON.parse(saved) : []; }
+    catch { return []; }
+  });
 
-  // Cart
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // Cart — persist in localStorage
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try { const saved = localStorage.getItem("nb_cart"); return saved ? JSON.parse(saved) : []; }
+    catch { return []; }
+  });
 
   // Orders
   const [orders, setOrders] = useState<Order[]>(() => {
@@ -908,6 +914,8 @@ export default function App() {
     localStorage.setItem("nb_theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
+  useEffect(() => { localStorage.setItem("nb_cart", JSON.stringify(cart)); }, [cart]);
+  useEffect(() => { localStorage.setItem("nb_wishlist", JSON.stringify(wishlist)); }, [wishlist]);
   useEffect(() => { localStorage.setItem("nb_orders", JSON.stringify(orders)); }, [orders]);
   useEffect(() => { localStorage.setItem("nb_expenses", JSON.stringify(expenses)); }, [expenses]);
   useEffect(() => { localStorage.setItem("nb_chats", JSON.stringify(conversations)); }, [conversations]);
@@ -1162,26 +1170,14 @@ export default function App() {
     setEditingPackage(null);
   };
 
-  // Public cart functions — gate behind auth
+  // Public cart functions — no auth gate, anyone can add to cart
   const addToCart = useCallback((productId: number, variantId: string, _packageLabel?: string, brand?: string) => {
-    if (!isUserFullyVerified) {
-      setPendingCartAction({ type: "single", productId, variantId });
-      setShowAuthModal(true);
-      setAuthStep(currentUser ? (currentUser.emailVerified ? (currentUser.phone ? "otp-phone" : "add-phone") : "otp-email") : "choose");
-      return;
-    }
     doAddToCart(productId, variantId, _packageLabel, brand);
-  }, [isUserFullyVerified, currentUser]);
+  }, []);
 
   const addPackageToCart = useCallback((pkg: FoodPackage, customItems?: PackageItem[]) => {
-    if (!isUserFullyVerified) {
-      setPendingCartAction({ type: "package", pkg, items: customItems });
-      setShowAuthModal(true);
-      setAuthStep(currentUser ? (currentUser.emailVerified ? (currentUser.phone ? "otp-phone" : "add-phone") : "otp-email") : "choose");
-      return;
-    }
     doAddPackageToCart(pkg, customItems);
-  }, [showToast]);
+  }, []);
 
   const updateCartQty = useCallback((productId: number, variantId: string, delta: number) => {
     setCart(prev => {
@@ -1209,29 +1205,25 @@ export default function App() {
   }, 0);
   const baseDeliveryFee = form.address.toLowerCase().includes("aba") || form.address === "" ? 0 : 2500;
   const deliveryFee = baseDeliveryFee + (form.deliveryType === "same-day" ? sameDayFee : 0);
-  const cartTotal = cartSubtotal + deliveryFee;
+  // First-order ₦500 discount
+  const isFirstOrder = orders.length === 0;
+  const firstOrderDiscount = isFirstOrder && cartSubtotal >= MIN_ORDER ? 500 : 0;
   const pointsDiscount = Math.min(redeemPoints * POINTS_VALUE, cartSubtotal, userPoints * POINTS_VALUE);
+  const cartTotal = cartSubtotal + deliveryFee - firstOrderDiscount - pointsDiscount;
 
   // ===== ADMIN AUTH =====
   async function handleAdminLogin() {
     setLoginError("");
-    try {
-      const res = await fetch("http://localhost:3000/api/auth/login", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginForm.email, password: loginForm.password }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.user?.role === "admin") {
-          localStorage.setItem("nb_token", data.accessToken);
-          setAdminAuth(true); setPage("admin-dashboard");
-          showToast("Welcome back, Admin!", "success");
-        } else { setLoginError("This account does not have admin access."); }
-      } else {
-        const err = await res.json().catch(() => ({}));
-        setLoginError(err.error || "Invalid credentials. Please try again.");
-      }
-    } catch { setLoginError("Could not connect to server. Please try again."); }
+    // Client-side admin login (replace with server auth in production)
+    const adminEmail = "admin@naijabasket.com";
+    const adminPassword = localStorage.getItem("nb_admin_pw") || "admin123";
+    if (loginForm.email === adminEmail && loginForm.password === adminPassword) {
+      localStorage.setItem("nb_token", "admin_" + Date.now());
+      setAdminAuth(true); setPage("admin-dashboard");
+      showToast("Welcome back, Admin!", "success");
+    } else {
+      setLoginError("Invalid credentials. Use admin@naijabasket.com to log in.");
+    }
   }
 
   function handleAdminLogout() {
@@ -1246,23 +1238,25 @@ export default function App() {
     if (pwForm.newPw !== pwForm.confirm) { setPwMsg({ text: "New passwords do not match.", type: "error" }); return; }
     if (pwForm.newPw.length < 6) { setPwMsg({ text: "New password must be at least 6 characters.", type: "error" }); return; }
     setPwLoading(true);
-    try {
-      const token = localStorage.getItem("nb_token");
-      const res = await fetch("http://localhost:3000/api/auth/change-password", {
-        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ currentPassword: pwForm.current, newPassword: pwForm.newPw }),
-      });
-      const data = await res.json();
-      if (res.ok) { setPwMsg({ text: "Password changed successfully!", type: "success" }); setPwForm({ current: "", newPw: "", confirm: "" }); showToast("Admin password updated", "success"); }
-      else { setPwMsg({ text: data.error || "Failed to change password.", type: "error" }); }
-    } catch { setPwMsg({ text: "Could not connect to server.", type: "error" }); }
-    finally { setPwLoading(false); }
+    // Client-side password change
+    const currentPw = localStorage.getItem("nb_admin_pw") || "admin123";
+    if (pwForm.current !== currentPw) { setPwMsg({ text: "Current password is incorrect.", type: "error" }); setPwLoading(false); return; }
+    localStorage.setItem("nb_admin_pw", pwForm.newPw);
+    setPwMsg({ text: "Password changed successfully!", type: "success" }); setPwForm({ current: "", newPw: "", confirm: "" }); showToast("Admin password updated", "success");
+    setPwLoading(false);
   }
 
   // ===== ORDER PLACEMENT =====
   async function placeOrder() {
     if (!form.name || !form.phone || !form.address) { showToast("Please fill in all delivery details", "error"); return; }
     if (cartSubtotal < MIN_ORDER) { showToast(`Minimum order is ₦${MIN_ORDER.toLocaleString()}.`, "error"); return; }
+    // Auth gate — require sign-up at checkout, not at cart
+    if (!isUserFullyVerified) {
+      setShowAuthModal(true);
+      setAuthStep(currentUser ? (currentUser.emailVerified ? (currentUser.phone ? "otp-phone" : "add-phone") : "otp-email") : "choose");
+      showToast("Please sign in to place your order", "info");
+      return;
+    }
 
     setProcessing(true);
     const orderItems = cart.map(c => {
@@ -1280,17 +1274,45 @@ export default function App() {
 
     try {
       if (form.payment === "naira") {
-        const paystackRes = await fetch("http://localhost:3000/api/payments/paystack/initialize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("nb_token") || ""}` },
-          body: JSON.stringify({ orderId: order.id, email: form.email || `${form.phone}@naijabasket.com`, amount: cartTotal }),
+        // Paystack inline client-side popup — no backend needed
+        const email = form.email || `${form.phone}@naijabasket.com`;
+        const handler = (window as any).PaystackPop?.setup({
+          key: "pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", // Replace with your live Paystack public key
+          email,
+          amount: cartTotal * 100, // Paystack expects kobo
+          currency: "NGN",
+          ref: order.id,
+          metadata: { order_id: order.id, customer_name: form.name, phone: form.phone },
+          onClose: () => { showToast("Payment cancelled", "info"); setProcessing(false); },
+          callback: (response: any) => {
+            order.paymentRef = response.reference;
+            order.status = "paid";
+            setOrders(prev => [order, ...prev]);
+            earnPointsFromOrder(order.total);
+            if (redeemPoints > 0) {
+              setCurrentUser(prev => prev ? { ...prev, loyaltyPoints: Math.max(0, (prev.loyaltyPoints || 0) - redeemPoints) } : null);
+              setRedeemPoints(0);
+            }
+            setCart([]);
+            setPlaced(order);
+            setPage("confirm");
+            showToast("Payment confirmed! 🎉", "success");
+            // Send WhatsApp notification
+            sendOrderWhatsApp(order);
+          },
         });
-        if (paystackRes.ok) {
-          const paymentData = await paystackRes.json();
-          order.paymentRef = paymentData.data?.reference;
+        if (handler) {
+          handler.openIframe();
+        } else {
+          // Fallback if Paystack SDK not loaded — place order as pending and send via WhatsApp
+          order.status = "pending";
           setOrders(prev => [order, ...prev]);
-          setPaymentScreen({ type: "naira", order, authUrl: paymentData.data?.authorizationUrl });
-        } else { showToast("Failed to initialize payment. Please try again.", "error"); }
+          setCart([]);
+          setPlaced(order);
+          setPage("confirm");
+          sendOrderWhatsApp(order);
+          showToast("Order placed! Complete payment via WhatsApp", "success");
+        }
       } else {
         setOrders(prev => [order, ...prev]);
         setTimer(30 * 60);
@@ -1298,6 +1320,13 @@ export default function App() {
       }
     } catch { showToast("Connection error. Please try again.", "error"); }
     setProcessing(false);
+  }
+
+  // Send order details to WhatsApp
+  function sendOrderWhatsApp(order: Order) {
+    const items = order.items.map(i => `• ${i.name} (${i.variant}) ×${i.quantity} = ₦${i.total.toLocaleString()}`).join("\n");
+    const msg = `🧺 *NEW ORDER — NaijaBasket*\n\nOrder: ${order.id}\nCustomer: ${order.customer.name}\nPhone: ${order.customer.phone}\nAddress: ${order.customer.address}\n\n${items}\n\nSubtotal: ₦${order.subtotal.toLocaleString()}\nDelivery: ${order.deliveryFee === 0 ? "FREE" : `₦${order.deliveryFee.toLocaleString()}`}${order.deliveryType === "same-day" ? " (Same-Day ⚡)" : ""}\n*Total: ₦${order.total.toLocaleString()}*\nPayment: ${order.paymentMethod === "naira" ? "Paystack" : "Crypto"} — ${order.status}`;
+    window.open(`https://wa.me/2348159242986?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
   function handlePaymentConfirmed(txHash?: string) {
@@ -1632,6 +1661,8 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
           getProductRating={getProductRating}
           onReview={(productId) => setReviewModal({ productId, rating: 0, comment: "" })}
           currentUser={currentUser}
+          wishlist={wishlist}
+          onToggleWishlist={(id) => { setWishlist(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]); showToast(wishlist.includes(id) ? "Removed from wishlist" : "Added to wishlist ❤️", "info"); }}
         />
       )}
 
@@ -1684,11 +1715,26 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                     </div>
                   </div>
                 )}
+                {/* First-order discount */}
+                {firstOrderDiscount > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 14 }}><span style={{ color: V.success }}>🎉 First Order Discount</span><span style={{ fontWeight: 600, color: V.success }}>-₦{firstOrderDiscount.toLocaleString()}</span></div>}
                 {pointsDiscount > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 14 }}><span style={{ color: V.success }}>⭐ Points Discount</span><span style={{ fontWeight: 600, color: V.success }}>-₦{pointsDiscount.toLocaleString()}</span></div>}
-                <div style={{ borderTop: `1px solid ${V.border}`, paddingTop: 8, display: "flex", justifyContent: "space-between" }}><span style={{ fontWeight: 700, fontSize: 16 }}>Total</span><span style={{ fontWeight: 800, fontSize: 20, color: V.primary }}>₦{(cartTotal - pointsDiscount).toLocaleString()}</span></div>
+                <div style={{ borderTop: `1px solid ${V.border}`, paddingTop: 8, display: "flex", justifyContent: "space-between" }}><span style={{ fontWeight: 700, fontSize: 16 }}>Total</span><span style={{ fontWeight: 800, fontSize: 20, color: V.primary }}>₦{cartTotal.toLocaleString()}</span></div>
                 {cartSubtotal < MIN_ORDER && <div style={{ marginTop: 8, fontSize: 13, color: V.warning, fontWeight: 500 }}>⚠️ Minimum order: ₦{MIN_ORDER.toLocaleString()}. Add ₦{(MIN_ORDER - cartSubtotal).toLocaleString()} more.</div>}
               </div>
               <div style={{ background: "var(--color-info-bg)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: V.textSecondary, marginBottom: 20 }}>🚚 Within Aba: <strong>FREE delivery</strong>. Outside Aba: ₦2,500.</div>
+              {/* Estimated delivery date */}
+              <div style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 12, padding: "12px 14px", marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 20 }}>📅</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: V.text }}>Estimated Delivery</div>
+                  <div style={{ fontSize: 12, color: V.textMuted }}>
+                    {form.deliveryType === "same-day"
+                      ? `Today, ${new Date().toLocaleDateString("en-NG", { weekday: "short", month: "short", day: "numeric" })} (before 6pm)`
+                      : (() => { const d = new Date(); d.setDate(d.getDate() + 1); if (d.getDay() === 0) d.setDate(d.getDate() + 1); return `${d.toLocaleDateString("en-NG", { weekday: "short", month: "short", day: "numeric" })} (Next business day)`; })()
+                    }
+                  </div>
+                </div>
+              </div>
               {/* Checkout form */}
               <div style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 16, padding: 24 }}>
                 <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20, color: V.text }}>Delivery & Payment</h3>
@@ -1760,6 +1806,35 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
               <button onClick={() => setPage("orders")} style={{ flex: 1, background: V.bgCard, color: V.text, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px", fontWeight: 600, fontSize: 14, cursor: "pointer", minWidth: 100 }}>📦 Orders</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ===== ABOUT PAGE ===== */}
+      {page === "about" && (
+        <div style={{ maxWidth: 700, margin: "0 auto", padding: "24px 16px" }}>
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: V.primary, marginBottom: 8 }}>🧺 About NaijaBasket</h2>
+          <p style={{ fontSize: 15, color: V.textSecondary, lineHeight: 1.7, marginBottom: 20 }}>
+            NaijaBasket is your trusted online marketplace for fresh Nigerian foodstuffs at market prices. We connect you directly to quality products from Aba's vibrant markets — no middlemen, no stress.
+          </p>
+          <div style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 16, padding: 24, marginBottom: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: V.text, marginBottom: 12 }}>What We Offer</h3>
+            <ul style={{ margin: 0, paddingLeft: 20, color: V.textSecondary, lineHeight: 2, fontSize: 14 }}>
+              <li><strong>50+ products</strong> — Rice, beans, garri, oils, vegetables, proteins, spices & more</li>
+              <li><strong>Ready-made packs</strong> — Soup, stew & home packages with up to 5% savings</li>
+              <li><strong>Free delivery</strong> within Aba. Same-day delivery available ⚡</li>
+              <li><strong>Secure payments</strong> — Pay with Paystack (card/bank) or cryptocurrency</li>
+              <li><strong>₦500 off</strong> your first order — no code needed!</li>
+            </ul>
+          </div>
+          <div style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 16, padding: 24, marginBottom: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: V.text, marginBottom: 12 }}>Contact Us</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, color: V.textSecondary, fontSize: 14 }}>
+              <a href="https://wa.me/2348159242986" target="_blank" rel="noopener noreferrer" style={{ color: V.primary, textDecoration: "none", fontWeight: 600 }}>💬 WhatsApp: +234 815 924 2986</a>
+              <span>📍 Aba, Abia State, Nigeria</span>
+              <span>🕐 Mon - Sun: 8AM - 8PM</span>
+            </div>
+          </div>
+          <button onClick={() => setPage("shop")} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 12, padding: "14px 28px", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>🛒 Start Shopping</button>
         </div>
       )}
 
@@ -2329,13 +2404,61 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
         </div>
       )}
 
+      {/* ===== NEWSLETTER ===== */}
+      {page === "shop" && (
+        <div style={{ maxWidth: 600, margin: "40px auto 0", padding: "0 16px" }}>
+          <div style={{ background: "var(--gradient-hero, linear-gradient(135deg, #2D6A4F 0%, #40916C 100%))", borderRadius: 16, padding: "28px 24px", textAlign: "center" }}>
+            <h3 style={{ color: "#fff", fontSize: 18, fontWeight: 700, margin: "0 0 6px" }}>🧺 Stay in the Loop</h3>
+            <p style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, margin: "0 0 16px" }}>Get notified about new products, deals & seasonal packs.</p>
+            {newsletterDone ? (
+              <p style={{ color: "#FFE066", fontWeight: 700, fontSize: 14 }}>✓ You're subscribed! We'll keep you posted.</p>
+            ) : (
+              <div style={{ display: "flex", gap: 8, maxWidth: 400, margin: "0 auto" }}>
+                <input type="email" placeholder="your@email.com" value={newsletterEmail} onChange={e => setNewsletterEmail(e.target.value)} style={{ flex: 1, padding: "12px 14px", borderRadius: 10, border: "none", fontSize: 14, outline: "none" }} />
+                <button onClick={() => { if (newsletterEmail.includes("@")) { setNewsletterDone(true); showToast("Subscribed! 🎉", "success"); } else { showToast("Please enter a valid email", "error"); } }} style={{ background: "rgba(255,255,255,0.95)", color: "#2D6A4F", border: "none", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" }}>Subscribe</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ===== FOOTER ===== */}
-      <footer style={{ textAlign: "center", color: V.textMuted, fontSize: 12, padding: "32px 16px", borderTop: `1px solid ${V.border}`, marginTop: 40, background: V.bgSecondary }}>
-        <div style={{ marginBottom: 8 }}><strong style={{ color: V.primary }}>🧺 NaijaBasket</strong> — Your trusted foodstuff market, online.</div>
-        <div>Based in Aba, Abia State · Delivers Nationwide · © {new Date().getFullYear()}</div>
-        <div style={{ marginTop: 8, display: "flex", gap: 20, justifyContent: "center", flexWrap: "wrap" as const }}>
-          <a href="tel:+2348034567890" style={{ color: V.primary, textDecoration: "none" }}>📱 +234 803 456 7890</a>
-          <a href="https://wa.me/2348159242986" target="_blank" rel="noopener noreferrer" style={{ color: V.primary, textDecoration: "none" }}>💬 WhatsApp</a>
+      <footer style={{ color: V.textMuted, fontSize: 12, padding: "40px 16px 32px", borderTop: `1px solid ${V.border}`, marginTop: 40, background: V.bgSecondary }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 32, marginBottom: 32 }}>
+          {/* Brand */}
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: V.primary, marginBottom: 8 }}>🧺 NaijaBasket</div>
+            <p style={{ lineHeight: 1.6, marginBottom: 12, color: V.textMuted }}>Your trusted online market for fresh Nigerian foodstuffs. From Aba to your doorstep.</p>
+            <div style={{ display: "flex", gap: 12 }}>
+              <a href="#" style={{ color: V.primary, textDecoration: "none", fontSize: 18 }} title="Instagram">📷</a>
+              <a href="#" style={{ color: V.primary, textDecoration: "none", fontSize: 18 }} title="Twitter/X">🐦</a>
+              <a href="#" style={{ color: V.primary, textDecoration: "none", fontSize: 18 }} title="Facebook">📘</a>
+              <a href="https://wa.me/2348159242986" target="_blank" rel="noopener noreferrer" style={{ color: V.primary, textDecoration: "none", fontSize: 18 }} title="WhatsApp">💬</a>
+            </div>
+          </div>
+          {/* Quick Links */}
+          <div>
+            <div style={{ fontWeight: 700, color: V.text, marginBottom: 10 }}>Quick Links</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <a onClick={() => setPage("shop")} style={{ color: V.textMuted, textDecoration: "none", cursor: "pointer" }}>🛒 Shop</a>
+              <a onClick={() => setPage("cart")} style={{ color: V.textMuted, textDecoration: "none", cursor: "pointer" }}>🧺 Cart</a>
+              <a onClick={() => setPage("orders")} style={{ color: V.textMuted, textDecoration: "none", cursor: "pointer" }}>📦 My Orders</a>
+              <a onClick={() => setPage("about")} style={{ color: V.textMuted, textDecoration: "none", cursor: "pointer" }}>ℹ️ About Us</a>
+            </div>
+          </div>
+          {/* Contact */}
+          <div>
+            <div style={{ fontWeight: 700, color: V.text, marginBottom: 10 }}>Contact Us</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <a href="tel:+2348159242986" style={{ color: V.textMuted, textDecoration: "none" }}>📱 +234 815 924 2986</a>
+              <a href="https://wa.me/2348159242986" target="_blank" rel="noopener noreferrer" style={{ color: V.textMuted, textDecoration: "none" }}>💬 WhatsApp Order</a>
+              <span>📍 Aba, Abia State, Nigeria</span>
+              <span>🚚 Delivers within Aba & environs</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ textAlign: "center", paddingTop: 20, borderTop: `1px solid ${V.border}` }}>
+          <p style={{ margin: 0 }}>© {new Date().getFullYear()} NaijaBasket. All rights reserved.</p>
         </div>
       </footer>
 
