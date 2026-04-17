@@ -1847,7 +1847,7 @@ export default function App() {
   }
 
   // BTC payment — QR code + mempool.space auto-detect
-  const btcPollingRef = React.useRef<any>(null);
+  const btcPollingRef = useRef<any>(null);
 
   async function startBtcPayment() {
     if (!paymentScreen) return;
@@ -1904,7 +1904,7 @@ export default function App() {
   }
 
   // XRP payment — QR code + XRPL WebSocket auto-detect
-  const xrpWsRef = React.useRef<WebSocket | null>(null);
+  const xrpWsRef = useRef<WebSocket | null>(null);
 
   async function startXrpPayment() {
     if (!paymentScreen) return;
@@ -2004,7 +2004,7 @@ export default function App() {
   }
 
   // Cleanup polling/WS on unmount or payment screen close
-  React.useEffect(() => {
+  useEffect(() => {
     if (!paymentScreen || paymentScreen.type !== "crypto") {
       if (btcPollingRef.current) { clearInterval(btcPollingRef.current); btcPollingRef.current = null; }
       if (xrpWsRef.current) { xrpWsRef.current.close(); xrpWsRef.current = null; }
