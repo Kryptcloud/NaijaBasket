@@ -178,7 +178,7 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "2-h", size: "Half Bag", unit: "25kg", price: 36000, stock: 25 },
       { id: "2-f", size: "Full Bag", unit: "50kg", price: 68000, stock: 20 },
     ], inStock: true },
-  { id: 3, name: "Beans", category: "grains", desc: "Premium Nigerian beans — choose your type", img: "🫘", imgUrl: "https://images.unsplash.com/photo-1515543904379-3d757abe528d?w=400&h=300&fit=crop&q=80",
+  { id: 3, name: "Beans", category: "grains", desc: "Premium Nigerian beans — choose your type", img: "🫘",
     brands: ["Iron Beans (Honey)", "White Beans", "Potasco (Black-Eyed)", "Brown Beans"],
     variants: [
       { id: "3-q", size: "Quarter Bag", unit: "12.5kg", price: 12000, stock: 85 },
@@ -191,7 +191,7 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "5-h", size: "Half Bag", unit: "25kg", price: 13000, stock: 40 },
       { id: "5-f", size: "Full Bag", unit: "50kg", price: 24000, stock: 25 },
     ], inStock: true },
-  { id: 6, name: "Millet", category: "grains", desc: "Quality millet grain for fura & porridge", img: "🌾", imgUrl: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=300&fit=crop&q=80",
+  { id: 6, name: "Millet", category: "grains", desc: "Quality millet grain for fura & porridge", img: "🌾",
     variants: [
       { id: "6-q", size: "Quarter Bag", unit: "12.5kg", price: 8000, stock: 30 },
       { id: "6-h", size: "Half Bag", unit: "25kg", price: 15000, stock: 20 },
@@ -229,7 +229,7 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "11-5", size: "5 Litres", unit: "5L", price: 8500, stock: 60 },
       { id: "11-25", size: "25L Jerrycan", unit: "25L", price: 40000, stock: 25 },
     ], inStock: true },
-  { id: 12, name: "Groundnut Oil", category: "oils", desc: "Pure groundnut oil, no additives", img: "🥜", imgUrl: "https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?w=400&h=300&fit=crop&q=80",
+  { id: 12, name: "Groundnut Oil", category: "oils", desc: "Pure groundnut oil, no additives", img: "🥜",
     variants: [
       { id: "12-1", size: "1 Litre", unit: "1L", price: 2200, stock: 80 },
       { id: "12-5", size: "5 Litres", unit: "5L", price: 10000, stock: 40 },
@@ -258,23 +258,23 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "16-p", size: "Paint Bucket", unit: "~4kg", price: 5000, stock: 60 },
       { id: "16-b", size: "Basket", unit: "~20kg", price: 18000, stock: 25 },
     ], inStock: true },
-  { id: 17, name: "Okra (Dried)", category: "vegetables", desc: "Dried okra for draw soup", img: "🥒", imgUrl: "https://images.unsplash.com/photo-1425543103986-22abb7d7e8d2?w=400&h=300&fit=crop&q=80",
+  { id: 17, name: "Okra (Dried)", category: "vegetables", desc: "Dried okra for draw soup", img: "🥒",
     variants: [
       { id: "17-m", size: "Mudu", unit: "~1kg", price: 3000, stock: 80 },
       { id: "17-p", size: "Paint Bucket", unit: "~4kg", price: 10000, stock: 40 },
     ], inStock: true },
   // New vegetables for packages
-  { id: 35, name: "Oha Leaves", category: "vegetables", desc: "Fresh oha leaves for traditional soup", img: "🥬", imgUrl: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop&q=80",
+  { id: 35, name: "Oha Leaves", category: "vegetables", desc: "Fresh oha leaves for traditional soup", img: "🥬",
     variants: [
       { id: "35-s", size: "Small Bundle", unit: "~200g", price: 1500, stock: 60 },
       { id: "35-l", size: "Large Bundle", unit: "~500g", price: 3500, stock: 30 },
     ], inStock: true },
-  { id: 36, name: "Ugu (Pumpkin Leaves)", category: "vegetables", desc: "Fresh ugu leaves, farm picked", img: "🥬", imgUrl: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&h=300&fit=crop&q=80",
+  { id: 36, name: "Ugu (Pumpkin Leaves)", category: "vegetables", desc: "Fresh ugu leaves, farm picked", img: "🥬",
     variants: [
       { id: "36-s", size: "Small Bundle", unit: "~300g", price: 800, stock: 80 },
       { id: "36-l", size: "Large Bundle", unit: "~1kg", price: 2000, stock: 40 },
     ], inStock: true },
-  { id: 37, name: "Bitter Leaf", category: "vegetables", desc: "Fresh washed bitter leaf, ready to cook", img: "🥬", imgUrl: "https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?w=400&h=300&fit=crop&q=80",
+  { id: 37, name: "Bitter Leaf", category: "vegetables", desc: "Fresh washed bitter leaf, ready to cook", img: "🥬",
     variants: [
       { id: "37-s", size: "Small Bundle", unit: "~300g", price: 1000, stock: 70 },
       { id: "37-l", size: "Large Bundle", unit: "~1kg", price: 2500, stock: 35 },
@@ -291,13 +291,13 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "18-1", size: "1 Crate", unit: "30 eggs", price: 3500, stock: 100 },
       { id: "18-5", size: "5 Crates", unit: "150 eggs", price: 16500, stock: 50 },
     ], inStock: true },
-  { id: 19, name: "Crayfish", category: "proteins", desc: "Dried crayfish, premium grade", img: "🦐", imgUrl: "https://images.unsplash.com/photo-1565680532043-4f03e4c77aac?w=400&h=300&fit=crop&q=80",
+  { id: 19, name: "Crayfish", category: "proteins", desc: "Dried crayfish, premium grade", img: "🦐",
     variants: [
       { id: "19-m", size: "Mudu", unit: "~1kg", price: 5000, stock: 70 },
       { id: "19-p", size: "Paint Bucket", unit: "~4kg", price: 18000, stock: 35 },
       { id: "19-b", size: "Bag", unit: "~25kg", price: 100000, stock: 10 },
     ], inStock: true },
-  { id: 20, name: "Stockfish", category: "proteins", desc: "Imported stockfish, assorted sizes", img: "🐟", imgUrl: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400&h=300&fit=crop&q=80",
+  { id: 20, name: "Stockfish", category: "proteins", desc: "Imported stockfish, assorted sizes", img: "🐟",
     variants: [
       { id: "20-s", size: "Small Pack", unit: "~500g", price: 6000, stock: 50 },
       { id: "20-l", size: "Large Pack", unit: "~2kg", price: 22000, stock: 25 },
@@ -317,7 +317,7 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "23-1", size: "1 kg", unit: "1kg", price: 5000, stock: 50 },
       { id: "23-5", size: "5 kg", unit: "5kg", price: 23000, stock: 25 },
     ], inStock: true },
-  { id: 41, name: "Fresh Fish", category: "proteins", desc: "Fresh catfish & tilapia, cleaned and gutted", img: "🐟", imgUrl: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop&q=80",
+  { id: 41, name: "Fresh Fish", category: "proteins", desc: "Fresh catfish & tilapia, cleaned and gutted", img: "🐟",
     variants: [
       { id: "41-s", size: "Small (2-3 fish)", unit: "~1kg", price: 4000, stock: 60 },
       { id: "41-m", size: "Medium (4-5 fish)", unit: "~2.5kg", price: 9000, stock: 40 },
@@ -325,7 +325,7 @@ const INITIAL_PRODUCTS: Product[] = [
     ], inStock: true },
 
   // Soups & Seeds
-  { id: 24, name: "Egusi (Melon)", category: "soups", desc: "Clean shelled egusi seeds", img: "🥣", imgUrl: "https://images.unsplash.com/photo-1609501676725-7186f017a4b7?w=400&h=300&fit=crop&q=80",
+  { id: 24, name: "Egusi (Melon)", category: "soups", desc: "Clean shelled egusi seeds", img: "🥣",
     variants: [
       { id: "24-m", size: "Half Paint", unit: "~1.5kg", price: 5000, stock: 60 },
       { id: "24-p", size: "Paint Bucket", unit: "~6kg", price: 18000, stock: 30 },
@@ -338,7 +338,7 @@ const INITIAL_PRODUCTS: Product[] = [
     ], inStock: true },
 
   // Spices
-  { id: 26, name: "Ginger", category: "spices", desc: "Fresh dry ginger, strong aroma", img: "🧄", imgUrl: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400&h=300&fit=crop&q=80",
+  { id: 26, name: "Ginger", category: "spices", desc: "Fresh dry ginger, strong aroma", img: "🧄",
     variants: [
       { id: "26-1", size: "1 kg", unit: "1kg", price: 3500, stock: 80 },
       { id: "26-p", size: "Paint Bucket", unit: "~5kg", price: 15000, stock: 30 },
@@ -353,13 +353,13 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "28-s", size: "Small Pack", unit: "~200g", price: 1500, stock: 100 },
       { id: "28-l", size: "Large Pack", unit: "~1kg", price: 6000, stock: 50 },
     ], inStock: true },
-  { id: 29, name: "Ogiri", category: "spices", desc: "Traditional fermented oil seed seasoning", img: "🫙", imgUrl: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&h=300&fit=crop&q=80",
+  { id: 29, name: "Ogiri", category: "spices", desc: "Traditional fermented oil seed seasoning", img: "🫙",
     variants: [
       { id: "29-s", size: "Small Wrap", unit: "~100g", price: 500, stock: 150 },
       { id: "29-l", size: "Large Wrap", unit: "~500g", price: 2000, stock: 80 },
     ], inStock: true },
   // New spices
-  { id: 39, name: "Seasoning Cubes", category: "spices", desc: "Maggi / Knorr assorted seasoning cubes", img: "🧂", imgUrl: "https://images.unsplash.com/photo-1532768641073-503a250f9754?w=400&h=300&fit=crop&q=80",
+  { id: 39, name: "Seasoning Cubes", category: "spices", desc: "Maggi / Knorr assorted seasoning cubes", img: "🧂",
     brands: ["Maggi", "Knorr", "Royco", "Star"],
     variants: [
       { id: "39-p", size: "Pack (50 cubes)", unit: "~250g", price: 2500, stock: 120 },
@@ -372,13 +372,13 @@ const INITIAL_PRODUCTS: Product[] = [
     ], inStock: true },
 
   // Pasta & Flour
-  { id: 30, name: "Spaghetti", category: "pasta", desc: "Quality spaghetti pasta", img: "🍝", imgUrl: "https://images.unsplash.com/photo-1551462147-37885acc36f1?w=400&h=300&fit=crop&q=80",
+  { id: 30, name: "Spaghetti", category: "pasta", desc: "Quality spaghetti pasta", img: "🍝",
     brands: ["Golden Penny", "Dangote", "Honeywell"],
     variants: [
       { id: "30-p", size: "Pack (500g)", unit: "500g", price: 800, stock: 200 },
       { id: "30-c", size: "Carton (20 packs)", unit: "10kg", price: 14000, stock: 40 },
     ], inStock: true },
-  { id: 31, name: "Noodles", category: "pasta", desc: "Indomie & assorted noodles", img: "🍜", imgUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=300&fit=crop&q=80",
+  { id: 31, name: "Noodles", category: "pasta", desc: "Indomie & assorted noodles", img: "🍜",
     brands: ["Indomie", "Dangote", "Honeywell", "Minimie"],
     variants: [
       { id: "31-p", size: "Pack (single)", unit: "70g", price: 250, stock: 500 },
@@ -2558,17 +2558,51 @@ export default function App() {
                       </div>
                       <div style={{ fontSize: 12, color: V.textMuted, marginBottom: 10 }}>{p.desc}</div>
                       
-                      {/* Image URL editing */}
+                      {/* Image upload */}
                       {isEditing && (
-                        <div style={{ marginBottom: 10 }}>
-                          <label style={{ fontSize: 11, fontWeight: 600, color: V.textMuted }}>Product Image URL</label>
-                          <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
-                            <input type="url" defaultValue={p.imgUrl || ""} placeholder="https://example.com/image.jpg" onBlur={e => {
-                              const url = e.target.value.trim();
-                              setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, imgUrl: url || undefined } : pr));
-                              if (url) showToast(`Image updated for ${p.name}`, "success");
-                            }} style={{ flex: 1, background: V.bg, border: `1px solid ${V.primary}`, borderRadius: 6, padding: "6px 10px", color: V.text, fontSize: 12, outline: "none" }} />
-                            {p.imgUrl && <img src={p.imgUrl} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: "cover", border: `1px solid ${V.border}` }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                        <div style={{ marginBottom: 12, padding: 10, background: V.bgSecondary, borderRadius: 10, border: `1px dashed ${V.border}` }}>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: V.textMuted, marginBottom: 8, display: "block" }}>Product Image</label>
+                          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                            {p.imgUrl ? (
+                              <img src={p.imgUrl} alt="" style={{ width: 64, height: 64, borderRadius: 10, objectFit: "cover", border: `2px solid ${V.primary}` }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                            ) : (
+                              <div style={{ width: 64, height: 64, borderRadius: 10, background: V.bg, border: `2px dashed ${V.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>{p.img}</div>
+                            )}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 160 }}>
+                              <label style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--gradient-primary)", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", justifyContent: "center" }}>
+                                📷 Upload Photo
+                                <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  if (file.size > 2 * 1024 * 1024) { showToast("Image must be under 2MB", "error"); return; }
+                                  const reader = new FileReader();
+                                  reader.onload = () => {
+                                    const img = new Image();
+                                    img.onload = () => {
+                                      const canvas = document.createElement("canvas");
+                                      const MAX = 400;
+                                      let w = img.width, h = img.height;
+                                      if (w > MAX || h > MAX) {
+                                        if (w > h) { h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; }
+                                      }
+                                      canvas.width = w; canvas.height = h;
+                                      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+                                      const dataUrl = canvas.toDataURL("image/webp", 0.8);
+                                      setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, imgUrl: dataUrl } : pr));
+                                      showToast(`Image uploaded for ${p.name}`, "success");
+                                    };
+                                    img.src = reader.result as string;
+                                  };
+                                  reader.readAsDataURL(file);
+                                  e.target.value = "";
+                                }} />
+                              </label>
+                              {p.imgUrl && (
+                                <button onClick={() => { setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, imgUrl: undefined } : pr)); showToast(`Image removed for ${p.name}`, "info"); }} style={{ background: "none", border: `1px solid ${V.danger}`, borderRadius: 8, padding: "6px 12px", fontSize: 11, color: V.danger, cursor: "pointer", fontWeight: 600 }}>
+                                  🗑️ Remove Image
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -2805,7 +2839,6 @@ export default function App() {
               <a onClick={() => setPage("cart")} style={{ color: V.textMuted, textDecoration: "none", cursor: "pointer" }}>🧺 Cart</a>
               <a onClick={() => setPage("orders")} style={{ color: V.textMuted, textDecoration: "none", cursor: "pointer" }}>📦 My Orders</a>
               <a onClick={() => setPage("about")} style={{ color: V.textMuted, textDecoration: "none", cursor: "pointer" }}>ℹ️ About Us</a>
-              <a onClick={() => setPage("admin-login")} style={{ color: V.textMuted, textDecoration: "none", cursor: "pointer" }}>🔐 Admin</a>
             </div>
           </div>
           {/* Contact */}
