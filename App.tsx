@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Shop } from "./src/components/Shop";
 
 // ===== API CONFIG =====
-const API_BASE = localStorage.getItem("nb_api_url") || "";
+const API_BASE = localStorage.getItem("nb_api_url") || "https://naijabasket.onrender.com";
 
 async function apiFetch(path: string, opts: RequestInit = {}) {
   if (!API_BASE) return null;
