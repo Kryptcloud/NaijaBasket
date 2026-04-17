@@ -991,6 +991,7 @@ export default function App() {
   }, []);
 
   // Loyalty tier calculation
+  const userPoints = currentUser?.loyaltyPoints || 0;
   const getLoyaltyTier = (points: number): "bronze" | "silver" | "gold" => {
     if (points >= 2000) return "gold";
     if (points >= 500) return "silver";
@@ -1165,7 +1166,6 @@ export default function App() {
   };
 
   // ===== LOYALTY POINTS =====
-  const userPoints = currentUser?.loyaltyPoints || 0;
   const earnPointsFromOrder = (orderTotal: number) => {
     const tierMultiplier = loyaltyTier === "gold" ? 2 : loyaltyTier === "silver" ? 1.5 : 1;
     const earned = Math.floor(orderTotal * POINTS_PER_NAIRA * tierMultiplier);
