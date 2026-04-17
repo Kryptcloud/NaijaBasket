@@ -1437,7 +1437,7 @@ export default function App() {
         // Paystack inline client-side popup — no backend needed
         const email = form.email || `${form.phone}@naijabasket.com`;
         const handler = (window as any).PaystackPop?.setup({
-          key: "pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", // Replace with your live Paystack public key
+          key: "pk_test_53eb572e8cee6d256f2072420f41149c7e3484ec",
           email,
           amount: cartTotal * 100, // Paystack expects kobo
           currency: "NGN",
