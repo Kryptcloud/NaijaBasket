@@ -178,17 +178,12 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "2-h", size: "Half Bag", unit: "25kg", price: 36000, stock: 25 },
       { id: "2-f", size: "Full Bag", unit: "50kg", price: 68000, stock: 20 },
     ], inStock: true },
-  { id: 3, name: "Beans (Brown)", category: "grains", desc: "Clean, stone-free honey beans", img: "🫘", imgUrl: "https://images.unsplash.com/photo-1515543904379-3d757abe528d?w=400&h=300&fit=crop&q=80",
+  { id: 3, name: "Beans", category: "grains", desc: "Premium Nigerian beans — choose your type", img: "🫘", imgUrl: "https://images.unsplash.com/photo-1515543904379-3d757abe528d?w=400&h=300&fit=crop&q=80",
+    brands: ["Iron Beans (Honey)", "White Beans", "Potasco (Black-Eyed)", "Brown Beans"],
     variants: [
-      { id: "3-q", size: "Quarter Bag", unit: "12.5kg", price: 12000, stock: 45 },
-      { id: "3-h", size: "Half Bag", unit: "25kg", price: 22000, stock: 30 },
-      { id: "3-f", size: "Full Bag", unit: "50kg", price: 42000, stock: 20 },
-    ], inStock: true },
-  { id: 4, name: "Beans (White)", category: "grains", desc: "Premium white beans for moi-moi & akara", img: "🫘", imgUrl: "https://images.unsplash.com/photo-1506807803488-8eafc15316c7?w=400&h=300&fit=crop&q=80",
-    variants: [
-      { id: "4-q", size: "Quarter Bag", unit: "12.5kg", price: 11000, stock: 40 },
-      { id: "4-h", size: "Half Bag", unit: "25kg", price: 20000, stock: 25 },
-      { id: "4-f", size: "Full Bag", unit: "50kg", price: 38000, stock: 15 },
+      { id: "3-q", size: "Quarter Bag", unit: "12.5kg", price: 12000, stock: 85 },
+      { id: "3-h", size: "Half Bag", unit: "25kg", price: 22000, stock: 55 },
+      { id: "3-f", size: "Full Bag", unit: "50kg", price: 42000, stock: 35 },
     ], inStock: true },
   { id: 5, name: "Maize (Corn)", category: "grains", desc: "Dried yellow maize, perfect for pap & feed", img: "🌽", imgUrl: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400&h=300&fit=crop&q=80",
     variants: [
@@ -203,13 +198,13 @@ const INITIAL_PRODUCTS: Product[] = [
     ], inStock: true },
 
   // Tubers
-  { id: 7, name: "Garri (White)", category: "tubers", desc: "Premium processed white garri", img: "🥣", imgUrl: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop&q=80",
+  { id: 7, name: "Garri (White)", category: "tubers", desc: "Premium processed white garri", img: "🥣",
     variants: [
       { id: "7-p", size: "Paint Bucket", unit: "~4kg", price: 3500, stock: 80 },
       { id: "7-h", size: "Half Bag", unit: "25kg", price: 15000, stock: 40 },
       { id: "7-f", size: "Full Bag", unit: "50kg", price: 28000, stock: 25 },
     ], inStock: true },
-  { id: 8, name: "Garri (Yellow)", category: "tubers", desc: "Quality yellow garri from Imo", img: "🥣", imgUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop&q=80",
+  { id: 8, name: "Garri (Yellow)", category: "tubers", desc: "Quality yellow garri from Imo", img: "🥣",
     variants: [
       { id: "8-p", size: "Paint Bucket", unit: "~4kg", price: 4000, stock: 70 },
       { id: "8-h", size: "Half Bag", unit: "25kg", price: 18000, stock: 35 },
@@ -228,7 +223,7 @@ const INITIAL_PRODUCTS: Product[] = [
     ], inStock: true },
 
   // Oils
-  { id: 11, name: "Palm Oil", category: "oils", desc: "Fresh red palm oil from Abia State", img: "🫒", imgUrl: "https://images.unsplash.com/photo-1474979266404-7f28a4b6a36a?w=400&h=300&fit=crop&q=80",
+  { id: 11, name: "Palm Oil", category: "oils", desc: "Fresh red palm oil from Abia State", img: "🫒",
     variants: [
       { id: "11-1", size: "1 Litre", unit: "1L", price: 1800, stock: 100 },
       { id: "11-5", size: "5 Litres", unit: "5L", price: 8500, stock: 60 },
@@ -240,7 +235,7 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "12-5", size: "5 Litres", unit: "5L", price: 10000, stock: 40 },
       { id: "12-25", size: "25L Jerrycan", unit: "25L", price: 48000, stock: 15 },
     ], inStock: true },
-  { id: 13, name: "Vegetable Oil", category: "oils", desc: "Premium vegetable cooking oil", img: "🍶", imgUrl: "https://images.unsplash.com/photo-1474979266404-7f28a4b6a36a?w=400&h=300&fit=crop&q=80",
+  { id: 13, name: "Vegetable Oil", category: "oils", desc: "Premium vegetable cooking oil", img: "🍶",
     brands: ["Devon King's", "Turkey", "Power Oil", "Grand Pure"],
     variants: [
       { id: "13-5", size: "5 Litres", unit: "5L", price: 9000, stock: 50 },
@@ -284,7 +279,7 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "37-s", size: "Small Bundle", unit: "~300g", price: 1000, stock: 70 },
       { id: "37-l", size: "Large Bundle", unit: "~1kg", price: 2500, stock: 35 },
     ], inStock: true },
-  { id: 38, name: "Spinach (Green)", category: "vegetables", desc: "Fresh green amaranth / efo tete", img: "🥬", imgUrl: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&h=300&fit=crop&q=80",
+  { id: 38, name: "Spinach (Green)", category: "vegetables", desc: "Fresh green amaranth / efo tete", img: "🥬",
     variants: [
       { id: "38-s", size: "Small Bundle", unit: "~300g", price: 500, stock: 100 },
       { id: "38-l", size: "Large Bundle", unit: "~1kg", price: 1200, stock: 50 },
@@ -307,7 +302,7 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "20-s", size: "Small Pack", unit: "~500g", price: 6000, stock: 50 },
       { id: "20-l", size: "Large Pack", unit: "~2kg", price: 22000, stock: 25 },
     ], inStock: true },
-  { id: 21, name: "Dried Fish", category: "proteins", desc: "Smoked catfish & dried fish assorted", img: "🐟", imgUrl: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400&h=300&fit=crop&q=80",
+  { id: 21, name: "Dried Fish", category: "proteins", desc: "Smoked catfish & dried fish assorted", img: "🐟",
     variants: [
       { id: "21-s", size: "Small Bundle", unit: "~500g", price: 4000, stock: 60 },
       { id: "21-l", size: "Large Bundle", unit: "~2kg", price: 14000, stock: 30 },
@@ -336,7 +331,7 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "24-p", size: "Paint Bucket", unit: "~6kg", price: 18000, stock: 30 },
       { id: "24-b", size: "Bag", unit: "~25kg", price: 70000, stock: 10 },
     ], inStock: true },
-  { id: 25, name: "Ogbono", category: "soups", desc: "Premium ogbono seeds for draw soup", img: "🥣", imgUrl: "https://images.unsplash.com/photo-1609501676725-7186f017a4b7?w=400&h=300&fit=crop&q=80",
+  { id: 25, name: "Ogbono", category: "soups", desc: "Premium ogbono seeds for draw soup", img: "🥣",
     variants: [
       { id: "25-m", size: "Mudu", unit: "~1kg", price: 6000, stock: 50 },
       { id: "25-p", size: "Paint Bucket", unit: "~4kg", price: 22000, stock: 20 },
@@ -353,7 +348,7 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "27-1", size: "1 kg", unit: "1kg", price: 4000, stock: 60 },
       { id: "27-p", size: "Paint Bucket", unit: "~5kg", price: 18000, stock: 25 },
     ], inStock: true },
-  { id: 28, name: "Dawadawa (Locust Beans)", category: "spices", desc: "Traditional fermented locust beans", img: "🫘", imgUrl: "https://images.unsplash.com/photo-1515543904379-3d757abe528d?w=400&h=300&fit=crop&q=80",
+  { id: 28, name: "Dawadawa (Locust Beans)", category: "spices", desc: "Traditional fermented locust beans", img: "🫘",
     variants: [
       { id: "28-s", size: "Small Pack", unit: "~200g", price: 1500, stock: 100 },
       { id: "28-l", size: "Large Pack", unit: "~1kg", price: 6000, stock: 50 },
@@ -389,24 +384,24 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "31-p", size: "Pack (single)", unit: "70g", price: 250, stock: 500 },
       { id: "31-c", size: "Carton (40 packs)", unit: "2.8kg", price: 9000, stock: 50 },
     ], inStock: true },
-  { id: 32, name: "Semolina", category: "pasta", desc: "Quality semolina flour for swallow", img: "🍚", imgUrl: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=300&fit=crop&q=80",
+  { id: 32, name: "Semolina", category: "pasta", desc: "Quality semolina flour for swallow", img: "🍚",
     variants: [
       { id: "32-1", size: "1 kg", unit: "1kg", price: 1500, stock: 80 },
       { id: "32-5", size: "5 kg", unit: "5kg", price: 7000, stock: 40 },
     ], inStock: true },
-  { id: 33, name: "Wheat Flour", category: "pasta", desc: "All-purpose wheat flour for baking", img: "🌾", imgUrl: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=300&fit=crop&q=80",
+  { id: 33, name: "Wheat Flour", category: "pasta", desc: "All-purpose wheat flour for baking", img: "🌾",
     variants: [
       { id: "33-h", size: "Half Bag", unit: "25kg", price: 18000, stock: 30 },
       { id: "33-f", size: "Full Bag", unit: "50kg", price: 34000, stock: 15 },
     ], inStock: true },
-  { id: 34, name: "Poundo Yam", category: "pasta", desc: "Instant poundo yam flour", img: "🥔", imgUrl: "https://images.unsplash.com/photo-1590005354167-6da97870c757?w=400&h=300&fit=crop&q=80",
+  { id: 34, name: "Poundo Yam", category: "pasta", desc: "Instant poundo yam flour", img: "🥔",
     variants: [
       { id: "34-1", size: "1 kg", unit: "1kg", price: 1800, stock: 70 },
       { id: "34-5", size: "5 kg", unit: "5kg", price: 8500, stock: 35 },
     ], inStock: true },
 
   // Salads
-  { id: 42, name: "Lettuce", category: "salads", desc: "Fresh crispy iceberg lettuce", img: "🥬", imgUrl: "https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?w=400&h=300&fit=crop&q=80",
+  { id: 42, name: "Lettuce", category: "salads", desc: "Fresh crispy iceberg lettuce", img: "🥬",
     variants: [
       { id: "42-s", size: "Small Head", unit: "~200g", price: 800, stock: 80 },
       { id: "42-l", size: "Large Head", unit: "~500g", price: 1500, stock: 50 },
@@ -436,7 +431,7 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "47-3", size: "3 Pieces", unit: "~450g", price: 1200, stock: 60 },
       { id: "47-6", size: "6 Pieces", unit: "~900g", price: 2200, stock: 35 },
     ], inStock: true },
-  { id: 48, name: "Sweet Corn", category: "salads", desc: "Fresh sweet corn cobs", img: "🌽", imgUrl: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400&h=300&fit=crop&q=80",
+  { id: 48, name: "Sweet Corn", category: "salads", desc: "Fresh sweet corn cobs", img: "🌽",
     variants: [
       { id: "48-3", size: "3 Cobs", unit: "~600g", price: 700, stock: 80 },
       { id: "48-6", size: "6 Cobs", unit: "~1.2kg", price: 1200, stock: 50 },
@@ -446,7 +441,7 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "49-s", size: "Small Pack", unit: "~500g", price: 600, stock: 70 },
       { id: "49-l", size: "Large Pack", unit: "~1kg", price: 1000, stock: 40 },
     ], inStock: true },
-  { id: 50, name: "Salad Cream", category: "salads", desc: "Heinz / Bama salad cream dressing", img: "🥛", imgUrl: "https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400&h=300&fit=crop&q=80",
+  { id: 50, name: "Salad Cream", category: "salads", desc: "Heinz / Bama salad cream dressing", img: "🥛",
     brands: ["Heinz", "Bama", "Crosse & Blackwell"],
     variants: [
       { id: "50-s", size: "Small Bottle", unit: "285ml", price: 1500, stock: 60 },
@@ -615,7 +610,7 @@ const PACKAGES: FoodPackage[] = [
       { productId: 1, variantId: "1-f", quantity: 1, required: true },
       { productId: 2, variantId: "2-q", quantity: 1, required: false },
       { productId: 3, variantId: "3-h", quantity: 1, required: true },
-      { productId: 4, variantId: "4-q", quantity: 1, required: false },
+      { productId: 3, variantId: "3-q", quantity: 1, required: false },
       { productId: 7, variantId: "7-h", quantity: 1, required: true },
       { productId: 8, variantId: "8-h", quantity: 1, required: false },
       { productId: 9, variantId: "9-l", quantity: 2, required: false },
@@ -1475,48 +1470,155 @@ export default function App() {
     });
   }
 
-  // ===== RECEIPT =====
+  // ===== RECEIPT (PNG) =====
   function downloadReceipt(order: Order) {
-    const receipt = `
-════════════════════════════════════════════
-       🧺  N A I J A B A S K E T
-    Your trusted foodstuff market, online
-════════════════════════════════════════════
+    const W = 600, PAD = 40, LINE = 22;
+    const items = order.items;
+    const rowCount = items.length;
+    const H = 520 + rowCount * 28;
+    const canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext("2d")!;
 
-Receipt: ${order.id}
-Date: ${new Date(order.date).toLocaleDateString("en-NG", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+    // Background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, W, H);
 
-CUSTOMER
-────────────────────────────────────────────
-Name:    ${order.customer.name}
-Phone:   ${order.customer.phone}
-Address: ${order.customer.address}
+    // Green header bar
+    const grad = ctx.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0, "#166534"); grad.addColorStop(1, "#15803d");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, 90);
 
-ITEMS ORDERED
-────────────────────────────────────────────
-${order.items.map(i => `${i.name} — ${i.variant}\n  ${i.quantity} × ₦${i.unitPrice.toLocaleString()} = ₦${i.total.toLocaleString()}`).join("\n\n")}
+    // Logo & Title
+    ctx.font = "bold 28px Arial, sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.fillText("🧺  NaijaBasket", W / 2, 40);
+    ctx.font = "14px Arial, sans-serif";
+    ctx.fillStyle = "#bbf7d0";
+    ctx.fillText("Your trusted foodstuff market, online", W / 2, 65);
+    ctx.font = "12px Arial, sans-serif";
+    ctx.fillStyle = "#86efac";
+    ctx.fillText("www.naijabasket.com", W / 2, 82);
 
-────────────────────────────────────────────
-Subtotal:      ₦${order.subtotal.toLocaleString()}
-Delivery Fee:  ${order.deliveryFee === 0 ? "FREE (Aba)" : `₦${order.deliveryFee.toLocaleString()}`}${order.deliveryType === "same-day" ? " (Same-Day ⚡)" : ""}
-TOTAL:         ₦${order.total.toLocaleString()}
+    // Receipt title
+    ctx.textAlign = "left";
+    let y = 115;
+    ctx.font = "bold 16px Arial, sans-serif";
+    ctx.fillStyle = "#166534";
+    ctx.fillText("RECEIPT", PAD, y);
+    ctx.font = "12px Arial, sans-serif";
+    ctx.fillStyle = "#6b7280";
+    ctx.textAlign = "right";
+    ctx.fillText(`#${order.id}`, W - PAD, y);
+    ctx.fillText(new Date(order.date).toLocaleDateString("en-NG", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }), W - PAD, y + 16);
+    ctx.textAlign = "left";
 
-PAYMENT
-────────────────────────────────────────────
-Method: ${order.paymentMethod === "naira" ? "Paystack (Naira)" : "Cryptocurrency"}
-Status: ${order.status.toUpperCase()}
-${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx Hash: ${order.txHash}` : ""}
+    // Divider
+    y += 30;
+    ctx.strokeStyle = "#e5e7eb"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
 
-════════════════════════════════════════════
-  Thank you for shopping with NaijaBasket! 🧺
-  Questions? WhatsApp: +234 815 924 2986
-════════════════════════════════════════════
-`;
-    const blob = new Blob([receipt], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `NaijaBasket-Receipt-${order.id}.txt`; a.click();
-    URL.revokeObjectURL(url);
+    // Customer info
+    y += 22;
+    ctx.font = "bold 13px Arial, sans-serif"; ctx.fillStyle = "#374151";
+    ctx.fillText("CUSTOMER", PAD, y);
+    y += 18;
+    ctx.font = "12px Arial, sans-serif"; ctx.fillStyle = "#4b5563";
+    ctx.fillText(`Name: ${order.customer.name}`, PAD, y); y += 16;
+    ctx.fillText(`Phone: ${order.customer.phone}`, PAD, y); y += 16;
+    ctx.fillText(`Address: ${order.customer.address}`, PAD, y); y += 10;
+
+    // Divider
+    y += 10;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+
+    // Items header
+    y += 20;
+    ctx.font = "bold 13px Arial, sans-serif"; ctx.fillStyle = "#374151";
+    ctx.fillText("ITEMS ORDERED", PAD, y);
+    y += 6;
+
+    // Column headers
+    y += 18;
+    ctx.fillStyle = "#f3f4f6";
+    ctx.fillRect(PAD, y - 13, W - PAD * 2, 20);
+    ctx.font = "bold 11px Arial, sans-serif"; ctx.fillStyle = "#6b7280";
+    ctx.fillText("Item", PAD + 6, y);
+    ctx.fillText("Qty", 340, y);
+    ctx.fillText("Price", 390, y);
+    ctx.textAlign = "right";
+    ctx.fillText("Total", W - PAD - 6, y);
+    ctx.textAlign = "left";
+
+    // Items
+    y += 8;
+    ctx.font = "12px Arial, sans-serif";
+    items.forEach(item => {
+      y += 20;
+      ctx.fillStyle = "#1f2937";
+      const label = `${item.name} (${item.variant})`;
+      ctx.fillText(label.length > 38 ? label.slice(0, 36) + "…" : label, PAD + 6, y);
+      ctx.fillText(`${item.quantity}`, 346, y);
+      ctx.fillText(`₦${item.unitPrice.toLocaleString()}`, 390, y);
+      ctx.textAlign = "right";
+      ctx.fillText(`₦${item.total.toLocaleString()}`, W - PAD - 6, y);
+      ctx.textAlign = "left";
+    });
+
+    // Divider
+    y += 16;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+
+    // Totals
+    y += 22;
+    ctx.font = "12px Arial, sans-serif"; ctx.fillStyle = "#4b5563";
+    ctx.fillText("Subtotal:", PAD + 6, y);
+    ctx.textAlign = "right"; ctx.fillText(`₦${order.subtotal.toLocaleString()}`, W - PAD - 6, y); ctx.textAlign = "left";
+    y += 18;
+    const delFee = order.deliveryFee === 0 ? "FREE (Aba)" : `₦${order.deliveryFee.toLocaleString()}`;
+    ctx.fillText(`Delivery Fee${order.deliveryType === "same-day" ? " (Same-Day ⚡)" : ""}:`, PAD + 6, y);
+    ctx.textAlign = "right"; ctx.fillText(delFee, W - PAD - 6, y); ctx.textAlign = "left";
+    y += 22;
+    ctx.font = "bold 15px Arial, sans-serif"; ctx.fillStyle = "#166534";
+    ctx.fillText("TOTAL:", PAD + 6, y);
+    ctx.textAlign = "right"; ctx.fillText(`₦${order.total.toLocaleString()}`, W - PAD - 6, y); ctx.textAlign = "left";
+
+    // Payment section
+    y += 24;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+    y += 20;
+    ctx.font = "bold 13px Arial, sans-serif"; ctx.fillStyle = "#374151";
+    ctx.fillText("PAYMENT", PAD, y);
+    y += 18;
+    ctx.font = "12px Arial, sans-serif"; ctx.fillStyle = "#4b5563";
+    ctx.fillText(`Method: ${order.paymentMethod === "naira" ? "Paystack (Naira)" : "Cryptocurrency"}`, PAD, y); y += 16;
+    ctx.fillText(`Status: ${order.status.toUpperCase()}`, PAD, y); y += 16;
+    if (order.paymentRef) { ctx.fillText(`Reference: ${order.paymentRef}`, PAD, y); y += 16; }
+    if (order.txHash) { ctx.fillText(`Tx Hash: ${order.txHash}`, PAD, y); y += 16; }
+
+    // Footer bar
+    y += 10;
+    const footerH = H - y;
+    const fGrad = ctx.createLinearGradient(0, y, W, y);
+    fGrad.addColorStop(0, "#166534"); fGrad.addColorStop(1, "#15803d");
+    ctx.fillStyle = fGrad;
+    ctx.fillRect(0, y, W, footerH);
+    ctx.textAlign = "center";
+    ctx.font = "bold 13px Arial, sans-serif"; ctx.fillStyle = "#ffffff";
+    ctx.fillText("Thank you for shopping with NaijaBasket! 🧺", W / 2, y + 20);
+    ctx.font = "12px Arial, sans-serif"; ctx.fillStyle = "#bbf7d0";
+    ctx.fillText("WhatsApp: +234 815 924 2986", W / 2, y + 38);
+
+    // Download
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `NaijaBasket-Receipt-${order.id}.png`; a.click();
+      URL.revokeObjectURL(url);
+    }, "image/png");
   }
 
   // ===== STYLES =====
