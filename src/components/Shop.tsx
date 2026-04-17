@@ -187,7 +187,7 @@ export function Shop({
         {[
           { icon: "🧺", label: "50+", sub: "Products Available" },
           { icon: "📦", label: "15+", sub: "Ready-Made Packs" },
-          { icon: "🚛", label: "Next Day", sub: "Delivery in Aba" },
+          { icon: "🚛", label: "FREE", sub: "Delivery in Aba" },
           { icon: "💰", label: "Up to 5%", sub: "Pack Savings" },
         ].map((s, i) => (
           <div key={i} style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 12, padding: "14px 12px", textAlign: "center" }}>
@@ -543,7 +543,7 @@ export function Shop({
       {/* ===== TRUST SIGNALS ===== */}
       <div style={{ marginTop: 40, background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 16, padding: "24px 20px", textAlign: "center" }}>
         <h3 style={{ fontSize: 16, fontWeight: 700, color: V.primary, marginBottom: 6 }}>Why NaijaBasket?</h3>
-        <p style={{ fontSize: 12, color: V.textMuted, margin: "0 0 16px" }}>Minimum order: ₦5,000 • Free delivery within Aba</p>
+        <p style={{ fontSize: 12, color: V.textMuted, margin: "0 0 16px" }}>Minimum order: ₦5,000 • Free delivery in Aba • South-East states from ₦1,500</p>
         <div className="nb-trust-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16 }}>
           {[
             { icon: "🌾", title: "Farm Fresh", desc: "Direct from farms & markets" },
