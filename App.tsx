@@ -2853,7 +2853,14 @@ export default function App() {
           </div>
         </div>
         <div style={{ textAlign: "center", paddingTop: 20, borderTop: `1px solid ${V.border}` }}>
-          <p style={{ margin: 0 }}>© {new Date().getFullYear()} NaijaBasket. All rights reserved.</p>
+          <p style={{ margin: 0, cursor: "default", userSelect: "none" }} onClick={() => {
+            const now = Date.now();
+            const key = "nb_admin_clicks";
+            const prev = JSON.parse(sessionStorage.getItem(key) || "[]") as number[];
+            const recent = [...prev.filter(t => now - t < 1500), now];
+            sessionStorage.setItem(key, JSON.stringify(recent));
+            if (recent.length >= 3) { sessionStorage.removeItem(key); setPage("admin-login"); }
+          }}>© {new Date().getFullYear()} NaijaBasket. All rights reserved.</p>
         </div>
       </footer>
 
