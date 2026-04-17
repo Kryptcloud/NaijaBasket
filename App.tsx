@@ -798,6 +798,11 @@ export default function App() {
     try { const saved = localStorage.getItem("nb_same_day_fee"); return saved ? Number(saved) : 3000; }
     catch { return 3000; }
   });
+  const [ngnUsdRate, setNgnUsdRate] = useState(() => {
+    try { const saved = localStorage.getItem("nb_ngn_usd_rate"); return saved ? Number(saved) : 1580; }
+    catch { return 1580; }
+  });
+  const [livePrices, setLivePrices] = useState<{ bnb: number; usdt: number; lastUpdated: string }>({ bnb: 0, usdt: 1, lastUpdated: "" });
 
   // Inventory
   const [inventoryData, setInventoryData] = useState<{ purchases: any[]; damages: any[] }>({ purchases: [], damages: [] });
@@ -958,6 +963,26 @@ export default function App() {
   useEffect(() => { localStorage.setItem("nb_wishlist", JSON.stringify(wishlist)); }, [wishlist]);
   useEffect(() => { localStorage.setItem("nb_orders", JSON.stringify(orders)); }, [orders]);
   useEffect(() => { localStorage.setItem("nb_expenses", JSON.stringify(expenses)); }, [expenses]);
+
+  // Fetch live crypto prices
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=binancecoin,tether&vs_currencies=usd");
+        if (res.ok) {
+          const data = await res.json();
+          setLivePrices({
+            bnb: data.binancecoin?.usd || 0,
+            usdt: data.tether?.usd || 1,
+            lastUpdated: new Date().toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" }),
+          });
+        }
+      } catch {}
+    };
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 60000); // Refresh every 60s
+    return () => clearInterval(interval);
+  }, []);
   useEffect(() => { localStorage.setItem("nb_chats", JSON.stringify(conversations)); }, [conversations]);
   useEffect(() => { localStorage.setItem("nb_products", JSON.stringify(products)); }, [products]);
 
@@ -1622,7 +1647,7 @@ export default function App() {
   // ===== CRYPTO WALLET PAY =====
   const MERCHANT_WALLET = "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68";
   const BSC_USDT = "0x55d398326f99059fF775485246999027B3197955";
-  const NGN_USD_RATE = 1580; // ~₦1,580 per $1 — update as needed
+  const NGN_USD_RATE = ngnUsdRate;
 
   async function connectWalletAndPay() {
     if (!paymentScreen) return;
@@ -1697,11 +1722,13 @@ export default function App() {
 
         tx = await usdt.transfer(MERCHANT_WALLET, amountWei);
       } else {
-        // Native BNB transfer
-        const amountWei = ethersLib.utils.parseEther(usdAmount.toFixed(6));
+        // Native BNB transfer — convert USD to BNB using live price
+        const bnbPrice = livePrices.bnb > 0 ? livePrices.bnb : 600; // fallback
+        const bnbAmount = usdAmount / bnbPrice;
+        const amountWei = ethersLib.utils.parseEther(bnbAmount.toFixed(8));
         const balance = await signer.getBalance();
         if (balance.lt(amountWei)) {
-          setCryptoPayError(`Insufficient BNB balance. You need ~${usdAmount.toFixed(4)} BNB.`);
+          setCryptoPayError(`Insufficient BNB balance. You need ~${bnbAmount.toFixed(6)} BNB ($${usdAmount.toFixed(2)}).`);
           setCryptoPayStatus("error");
           return;
         }
@@ -3222,6 +3249,33 @@ export default function App() {
                 <div style={{ fontSize: 12, color: V.textMuted, marginTop: 8 }}>Currently: ₦{sameDayFee.toLocaleString()} — Customers who choose same-day delivery pay this on top of the standard delivery fee.</div>
               </div>
               <div style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 14, padding: 24, marginTop: 20 }}>
+                <h4 style={{ fontSize: 15, fontWeight: 700, color: V.text, marginBottom: 12 }}>💰 Crypto Payment Settings</h4>
+                <label style={{ fontSize: 13, color: V.textMuted, display: "block", marginBottom: 6 }}>Your Dollar to Naira Rate (₦ per $1 USD)</label>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
+                  <input type="number" value={ngnUsdRate} onChange={e => setNgnUsdRate(Math.max(1, Number(e.target.value)))} style={{ flex: 1, background: V.bg, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px 14px", color: V.text, fontSize: 14, outline: "none" }} />
+                  <button onClick={() => { localStorage.setItem("nb_ngn_usd_rate", String(ngnUsdRate)); showToast("USD/NGN rate saved!", "success"); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" as const }}>Save</button>
+                </div>
+                <div style={{ fontSize: 12, color: V.textMuted, marginBottom: 16 }}>Currently: ₦{ngnUsdRate.toLocaleString()} per $1. This rate is used to convert Naira order totals to crypto amounts.</div>
+
+                {/* Live token prices */}
+                <div style={{ background: V.bgSecondary, borderRadius: 10, padding: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: V.text, marginBottom: 10 }}>📊 Live Token Prices</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 13, color: V.textMuted }}>💵 USDT</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: V.success }}>${livePrices.usdt.toFixed(2)} <span style={{ fontSize: 11, color: V.textMuted, fontWeight: 400 }}>≈ ₦{(livePrices.usdt * ngnUsdRate).toLocaleString()}</span></span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 13, color: V.textMuted }}>🟡 BNB</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "#F0B90B" }}>${livePrices.bnb.toLocaleString(undefined, { maximumFractionDigits: 2 })} <span style={{ fontSize: 11, color: V.textMuted, fontWeight: 400 }}>≈ ₦{(livePrices.bnb * ngnUsdRate).toLocaleString()}</span></span>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, color: V.textMuted, marginTop: 8, borderTop: `1px solid ${V.border}`, paddingTop: 8 }}>
+                    {livePrices.lastUpdated ? `Last updated: ${livePrices.lastUpdated} • Refreshes every 60s` : "Loading prices..."} • Source: CoinGecko
+                  </div>
+                </div>
+              </div>
+              <div style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 14, padding: 24, marginTop: 20 }}>
                 <h4 style={{ fontSize: 15, fontWeight: 700, color: V.text, marginBottom: 12 }}>🔗 Backend API</h4>
                 <label style={{ fontSize: 13, color: V.textMuted, display: "block", marginBottom: 6 }}>API Server URL (for cross-device order sync)</label>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -3386,9 +3440,16 @@ export default function App() {
                   <div style={{ fontSize: 13, color: V.textMuted, marginBottom: 4 }}>Order Total</div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: V.primary }}>₦{paymentScreen.order.total.toLocaleString()}</div>
                   <div style={{ fontSize: 14, color: V.success, fontWeight: 600, marginTop: 4 }}>
-                    ≈ {(paymentScreen.order.total / NGN_USD_RATE).toFixed(2)} {cryptoTokenChoice === "USDT" ? "USDT" : "BNB"}
+                    ≈ {cryptoTokenChoice === "USDT"
+                      ? `${(paymentScreen.order.total / NGN_USD_RATE).toFixed(2)} USDT`
+                      : livePrices.bnb > 0
+                        ? `${(paymentScreen.order.total / NGN_USD_RATE / livePrices.bnb).toFixed(6)} BNB`
+                        : `${(paymentScreen.order.total / NGN_USD_RATE).toFixed(2)} USD in BNB`}
                   </div>
-                  <div style={{ fontSize: 11, color: V.textMuted, marginTop: 2 }}>Rate: $1 ≈ ₦{NGN_USD_RATE.toLocaleString()}</div>
+                  <div style={{ fontSize: 11, color: V.textMuted, marginTop: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+                    <span>Rate: $1 ≈ ₦{NGN_USD_RATE.toLocaleString()}</span>
+                    {livePrices.bnb > 0 && <span>BNB: ${livePrices.bnb.toLocaleString(undefined, { maximumFractionDigits: 2 })} USD {livePrices.lastUpdated && `• Updated ${livePrices.lastUpdated}`}</span>}
+                  </div>
                 </div>
 
                 {/* Token selection */}
