@@ -2,11 +2,13 @@
   "name": "naijabasket-backend",
   "version": "1.0.0",
   "description": "Secure backend for naijabasket e-commerce platform",
-  "main": "dist/server.js",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
+    "start:ts": "node dist/server.js",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev": "node server.js",
+    "dev:ts": "ts-node-dev --respawn --transpile-only src/server.ts",
     "lint": "eslint src --ext .ts",
     "test": "jest",
     "migrate": "node dist/migrations/run.js"

@@ -38,6 +38,9 @@ tmp/
 temp/
 *.tmp
 
+# Data (persisted JSON store)
+data/
+
 # Logs
 logs/
 *.log

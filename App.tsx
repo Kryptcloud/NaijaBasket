@@ -1,6 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Shop } from "./src/components/Shop";
 
+// ===== API CONFIG =====
+const API_BASE = localStorage.getItem("nb_api_url") || "";
+
+async function apiFetch(path: string, opts: RequestInit = {}) {
+  if (!API_BASE) return null;
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...opts,
+      headers: { "Content-Type": "application/json", ...opts.headers },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
 // ============ TYPES ============
 interface ProductVariant {
   id: string;
@@ -52,6 +67,7 @@ interface Order {
   status: string;
   deliveryStatus: string;
   customer: { name: string; phone: string; email: string; address: string };
+  syncedAt?: string;
 }
 
 interface Toast {
@@ -936,6 +952,59 @@ export default function App() {
   useEffect(() => { localStorage.setItem("nb_chats", JSON.stringify(conversations)); }, [conversations]);
   useEffect(() => { localStorage.setItem("nb_products", JSON.stringify(products)); }, [products]);
 
+  // ===== API SYNC =====
+  // Fetch orders from API when admin logs in, and periodically
+  useEffect(() => {
+    if (!adminAuth || !API_BASE) return;
+    let cancelled = false;
+    const fetchOrders = async () => {
+      const data = await apiFetch("/api/orders");
+      if (data?.success && !cancelled) {
+        const remote: Order[] = data.orders;
+        setOrders(prev => {
+          const merged = [...prev];
+          for (const ro of remote) {
+            const idx = merged.findIndex(lo => lo.id === ro.id);
+            if (idx === -1) merged.push(ro);
+            else {
+              // Keep whichever was updated more recently
+              const remoteTime = new Date(ro.syncedAt || ro.date).getTime();
+              const localTime = new Date(merged[idx].syncedAt || merged[idx].date).getTime();
+              if (remoteTime > localTime) merged[idx] = ro;
+            }
+          }
+          merged.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          return merged;
+        });
+      }
+    };
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 15000); // Poll every 15s
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [adminAuth]);
+
+  // Sync products from API on load (if API is configured)
+  useEffect(() => {
+    if (!API_BASE) return;
+    (async () => {
+      const data = await apiFetch("/api/products");
+      if (data?.success && data.products.length > 0) {
+        setProducts(data.products);
+      }
+    })();
+  }, []);
+
+  // Debounced product sync to API when admin updates products
+  const productSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!adminAuth || !API_BASE || products.length === 0) return;
+    if (productSyncTimer.current) clearTimeout(productSyncTimer.current);
+    productSyncTimer.current = setTimeout(() => {
+      apiFetch("/api/products", { method: "PUT", body: JSON.stringify({ products }) });
+    }, 2000); // Sync 2s after last change
+    return () => { if (productSyncTimer.current) clearTimeout(productSyncTimer.current); };
+  }, [products, adminAuth]);
+
   useEffect(() => {
     if (!paymentScreen || paymentScreen.type !== "crypto" || timer <= 0) return;
     const interval = setInterval(() => {
@@ -1332,6 +1401,12 @@ export default function App() {
   }
 
   // ===== ORDER PLACEMENT =====
+
+  // Sync order to API (fire & forget)
+  function syncOrderToAPI(order: Order) {
+    apiFetch("/api/orders", { method: "POST", body: JSON.stringify(order) });
+  }
+
   async function placeOrder() {
     if (!form.name || !form.phone || !form.address) { showToast("Please fill in all delivery details", "error"); return; }
     if (cartSubtotal < MIN_ORDER) { showToast(`Minimum order is ₦${MIN_ORDER.toLocaleString()}.`, "error"); return; }
@@ -1373,6 +1448,7 @@ export default function App() {
             order.paymentRef = response.reference;
             order.status = "paid";
             setOrders(prev => [order, ...prev]);
+            syncOrderToAPI(order);
             earnPointsFromOrder(order.total);
             if (redeemPoints > 0) {
               setCurrentUser(prev => prev ? { ...prev, loyaltyPoints: Math.max(0, (prev.loyaltyPoints || 0) - redeemPoints) } : null);
@@ -1392,6 +1468,7 @@ export default function App() {
           // Fallback if Paystack SDK not loaded — place order as pending and send via WhatsApp
           order.status = "pending";
           setOrders(prev => [order, ...prev]);
+          syncOrderToAPI(order);
           setCart([]);
           setPlaced(order);
           setPage("confirm");
@@ -1400,6 +1477,7 @@ export default function App() {
         }
       } else {
         setOrders(prev => [order, ...prev]);
+        syncOrderToAPI(order);
         setTimer(30 * 60);
         setPaymentScreen({ type: "crypto", order, merchantAddress: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68" });
       }
@@ -2292,13 +2370,13 @@ export default function App() {
                           <td style={{ padding: "12px 10px", borderBottom: `1px solid ${V.borderSubtle}`, fontSize: 12 }}><span style={{ background: o.paymentMethod === "naira" ? "var(--color-info-bg)" : "var(--color-success-bg)", color: o.paymentMethod === "naira" ? V.accent : V.success, padding: "2px 8px", borderRadius: 4 }}>{o.paymentMethod === "naira" ? "Paystack" : "Crypto"}</span></td>
                           <td style={{ padding: "12px 10px", borderBottom: `1px solid ${V.borderSubtle}`, fontSize: 12 }}><span style={{ background: o.status === "paid" ? "var(--color-success-bg)" : "var(--color-warning-bg)", color: o.status === "paid" ? V.success : V.warning, padding: "2px 8px", borderRadius: 4, fontWeight: 600, textTransform: "capitalize" }}>{o.status}</span></td>
                           <td style={{ padding: "12px 10px", borderBottom: `1px solid ${V.borderSubtle}`, fontSize: 12 }}>
-                            <select value={o.deliveryStatus} onChange={e => { setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, deliveryStatus: e.target.value } : ord)); showToast(`Order ${o.id} → ${e.target.value.replace("_", " ")}`, "info"); }} style={{ background: V.bg, border: `1px solid ${V.border}`, borderRadius: 6, padding: "4px 8px", fontSize: 11, color: V.text, cursor: "pointer" }}>
+                            <select value={o.deliveryStatus} onChange={e => { const newStatus = e.target.value; setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, deliveryStatus: newStatus } : ord)); apiFetch(`/api/orders/${o.id}`, { method: "PATCH", body: JSON.stringify({ deliveryStatus: newStatus }) }); showToast(`Order ${o.id} → ${newStatus.replace("_", " ")}`, "info"); }} style={{ background: V.bg, border: `1px solid ${V.border}`, borderRadius: 6, padding: "4px 8px", fontSize: 11, color: V.text, cursor: "pointer" }}>
                               {["preparing", "packed", "dispatched", "in_transit", "delivered"].map(s => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
                             </select>
                           </td>
                           <td style={{ padding: "12px 10px", borderBottom: `1px solid ${V.borderSubtle}` }}>
                             <div style={{ display: "flex", gap: 6 }}>
-                              {o.status === "pending" && <button onClick={() => { setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, status: "paid" } : ord)); showToast(`Payment confirmed for ${o.id}`, "success"); }} style={{ background: V.success, color: "#fff", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Confirm</button>}
+                              {o.status === "pending" && <button onClick={() => { setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, status: "paid" } : ord)); apiFetch(`/api/orders/${o.id}`, { method: "PATCH", body: JSON.stringify({ status: "paid" }) }); showToast(`Payment confirmed for ${o.id}`, "success"); }} style={{ background: V.success, color: "#fff", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Confirm</button>}
                               <button onClick={() => downloadReceipt(o)} style={{ background: "var(--bg-accent-subtle)", color: V.primary, border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>📄</button>
                             </div>
                           </td>
@@ -2410,7 +2488,7 @@ export default function App() {
                       <div><span style={{ fontWeight: 600, color: V.primary }}>{o.id}</span><span style={{ color: V.textMuted, marginLeft: 8 }}>{o.customer.name}</span></div>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <span style={{ fontWeight: 700 }}>₦{o.total.toLocaleString()}</span>
-                        <button onClick={() => { setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, status: "paid" } : ord)); showToast(`Payment confirmed for ${o.id}`, "success"); }} style={{ background: V.success, color: "#fff", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Mark Paid</button>
+                        <button onClick={() => { setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, status: "paid" } : ord)); apiFetch(`/api/orders/${o.id}`, { method: "PATCH", body: JSON.stringify({ status: "paid" }) }); showToast(`Payment confirmed for ${o.id}`, "success"); }} style={{ background: V.success, color: "#fff", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ Mark Paid</button>
                       </div>
                     </div>
                   ))}
@@ -2793,6 +2871,15 @@ export default function App() {
                   <button onClick={() => { localStorage.setItem("nb_same_day_fee", String(sameDayFee)); showToast("Same-day fee updated!", "success"); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" as const }}>Save</button>
                 </div>
                 <div style={{ fontSize: 12, color: V.textMuted, marginTop: 8 }}>Currently: ₦{sameDayFee.toLocaleString()} — Customers who choose same-day delivery pay this on top of the standard delivery fee.</div>
+              </div>
+              <div style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 14, padding: 24, marginTop: 20 }}>
+                <h4 style={{ fontSize: 15, fontWeight: 700, color: V.text, marginBottom: 12 }}>🔗 Backend API</h4>
+                <label style={{ fontSize: 13, color: V.textMuted, display: "block", marginBottom: 6 }}>API Server URL (for cross-device order sync)</label>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <input type="text" placeholder="https://your-backend.onrender.com" defaultValue={API_BASE} id="nb-api-url-input" style={{ flex: 1, background: V.bg, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px 14px", color: V.text, fontSize: 14, outline: "none", fontFamily: "monospace" }} />
+                  <button onClick={() => { const val = (document.getElementById("nb-api-url-input") as HTMLInputElement)?.value?.trim().replace(/\/+$/, "") || ""; localStorage.setItem("nb_api_url", val); showToast(val ? "API URL saved! Refresh to connect." : "API URL cleared. Using local-only mode.", "success"); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" as const }}>Save</button>
+                </div>
+                <div style={{ fontSize: 12, color: V.textMuted, marginTop: 8 }}>{API_BASE ? `✅ Connected to: ${API_BASE}` : "⚠️ No API configured — orders stored locally only. Set this to sync orders across devices."}</div>
               </div>
             </div>
           )}
