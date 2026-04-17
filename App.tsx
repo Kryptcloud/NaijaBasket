@@ -807,8 +807,8 @@ export default function App() {
   const [merchantAddresses, setMerchantAddresses] = useState(() => {
     try {
       const saved = localStorage.getItem("nb_merchant_addresses");
-      return saved ? JSON.parse(saved) : { bsc: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", sol: "", btc: "", xrp: "", xrpTag: "" };
-    } catch { return { bsc: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", sol: "", btc: "", xrp: "", xrpTag: "" }; }
+      return saved ? JSON.parse(saved) : { bsc: "0xdcf6D4332eB0A5d41dF8961a8517E76D30650293", sol: "BYhVHD3QBKmPa3e3dWdwHQtf8kzN5mTeKmweWJXA8rNe", btc: "bc1q88specc74jdgjpfhw6hl2rlcrlm4evg5p2l6zs", xrp: "0x4978D9a8dD862B066c61c51228310fa10134979f", xrpTag: "" };
+    } catch { return { bsc: "0xdcf6D4332eB0A5d41dF8961a8517E76D30650293", sol: "BYhVHD3QBKmPa3e3dWdwHQtf8kzN5mTeKmweWJXA8rNe", btc: "bc1q88specc74jdgjpfhw6hl2rlcrlm4evg5p2l6zs", xrp: "0x4978D9a8dD862B066c61c51228310fa10134979f", xrpTag: "" }; }
   });
 
   // Inventory
@@ -1592,7 +1592,7 @@ export default function App() {
         setOrders(prev => [order, ...prev]);
         syncOrderToAPI(order);
         setTimer(30 * 60);
-        setPaymentScreen({ type: "crypto", order, merchantAddress: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68" });
+        setPaymentScreen({ type: "crypto", order, merchantAddress: "0xdcf6D4332eB0A5d41dF8961a8517E76D30650293" });
       }
     } catch { showToast("Connection error. Please try again.", "error"); }
     setProcessing(false);
@@ -1655,7 +1655,7 @@ export default function App() {
   }
 
   // ===== CRYPTO WALLET PAY =====
-  const MERCHANT_WALLET = merchantAddresses.bsc || "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68";
+  const MERCHANT_WALLET = merchantAddresses.bsc || "0xdcf6D4332eB0A5d41dF8961a8517E76D30650293";
   const BSC_USDT = "0x55d398326f99059fF775485246999027B3197955";
   const NGN_USD_RATE = ngnUsdRate;
 
