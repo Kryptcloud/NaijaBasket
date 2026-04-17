@@ -812,7 +812,8 @@ export default function App() {
   });
   const [userToken, setUserToken] = useState<string | null>(() => localStorage.getItem("nb_user_token"));
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authStep, setAuthStep] = useState<"choose" | "signup" | "otp-email" | "otp-phone" | "add-phone">("choose");
+  const [authStep, setAuthStep] = useState<"choose" | "login" | "signup" | "otp-email" | "otp-phone" | "add-phone">("choose");
+  const [loginEmail, setLoginEmail] = useState("");
   const [signupForm, setSignupForm] = useState({ name: "", email: "", phone: "" });
   const [otpInput, setOtpInput] = useState("");
   const [otpChannel, setOtpChannel] = useState<"email" | "phone">("email");
@@ -1039,6 +1040,7 @@ export default function App() {
     setShowAuthModal(false);
     setAuthStep("choose");
     setSignupForm({ name: "", email: "", phone: "" });
+    setLoginEmail("");
     setOtpInput("");
     setAuthError("");
     setAuthLoading(false);
@@ -1050,10 +1052,29 @@ export default function App() {
   // Generate a random 6-digit OTP for client-side mock auth
   const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
+  const handleLogin = async () => {
+    setAuthError("");
+    if (!loginEmail) { setAuthError("Please enter your email address."); return; }
+    setAuthLoading(true);
+    const registry: UserAccount[] = JSON.parse(localStorage.getItem("nb_registered_users") || "[]");
+    const found = registry.find(u => u.email.toLowerCase() === loginEmail.toLowerCase().trim());
+    if (!found) { setAuthError("No account found with that email. Please sign up."); setAuthLoading(false); return; }
+    setCurrentUser(found);
+    setUserToken(`tok_${Date.now()}`);
+    await sendOtp("email", found.email);
+    setAuthStep("otp-email");
+    setAuthLoading(false);
+  };
+
   const handleSignup = async () => {
     setAuthError("");
     if (!signupForm.name || !signupForm.email) { setAuthError("Please fill in your name and email."); return; }
     setAuthLoading(true);
+    // Check if email already registered
+    const registry: UserAccount[] = JSON.parse(localStorage.getItem("nb_registered_users") || "[]");
+    if (registry.some(u => u.email.toLowerCase() === signupForm.email.toLowerCase().trim())) {
+      setAuthError("An account with this email already exists. Please log in instead."); setAuthLoading(false); return;
+    }
     const user = { id: `u_${Date.now()}`, name: signupForm.name, email: signupForm.email, phone: signupForm.phone };
     setCurrentUser({ ...user, emailVerified: false, phoneVerified: false, loyaltyPoints: 0, referralCode: generateReferralCode(signupForm.name) });
     setUserToken(`tok_${Date.now()}`);
@@ -1097,7 +1118,16 @@ export default function App() {
         setAuthStep("otp-phone");
       } else {
         setPhoneVerified(true);
-        setCurrentUser(prev => prev ? { ...prev, phoneVerified: true } : null);
+        setCurrentUser(prev => {
+          if (!prev) return null;
+          const verified = { ...prev, phoneVerified: true };
+          // Save to registry for future logins
+          const registry: UserAccount[] = JSON.parse(localStorage.getItem("nb_registered_users") || "[]");
+          const idx = registry.findIndex(u => u.email.toLowerCase() === verified.email.toLowerCase());
+          if (idx >= 0) registry[idx] = verified; else registry.push(verified);
+          localStorage.setItem("nb_registered_users", JSON.stringify(registry));
+          return verified;
+        });
         showToast("Account verified! Welcome to NaijaBasket 🎉", "success");
         const pending = pendingCartAction;
         resetAuthModal();
@@ -2975,7 +3005,7 @@ export default function App() {
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>🧺</div>
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: V.text, marginBottom: 4 }}>Welcome to NaijaBasket</h2>
-                <p style={{ fontSize: 13, color: V.textMuted, marginBottom: 24, lineHeight: 1.5 }}>Sign up to start adding items to your basket. Your email and phone number will be verified with OTP.</p>
+                <p style={{ fontSize: 13, color: V.textMuted, marginBottom: 24, lineHeight: 1.5 }}>Log in or create an account to start shopping.</p>
                 
                 <button onClick={handleGoogleLogin} disabled={authLoading} style={{ width: "100%", padding: "14px 20px", borderRadius: 12, border: `1px solid ${V.border}`, background: V.bgSecondary, color: V.text, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12, opacity: authLoading ? 0.6 : 1 }}>
                   <span style={{ fontSize: 20 }}>G</span> Continue with Gmail
@@ -2987,10 +3017,31 @@ export default function App() {
                   <div style={{ flex: 1, height: 1, background: V.border }} />
                 </div>
                 
-                <button onClick={() => setAuthStep("signup")} style={{ width: "100%", padding: "14px 20px", borderRadius: 12, border: "none", background: "var(--gradient-primary)", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
-                  Sign up with Email & Phone
+                <button onClick={() => { setAuthStep("login"); setAuthError(""); }} style={{ width: "100%", padding: "14px 20px", borderRadius: 12, border: "none", background: "var(--gradient-primary)", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", marginBottom: 10 }}>
+                  Log In with Email
+                </button>
+                <button onClick={() => { setAuthStep("signup"); setAuthError(""); }} style={{ width: "100%", padding: "14px 20px", borderRadius: 12, border: `1px solid ${V.border}`, background: "transparent", color: V.text, fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
+                  Create New Account
                 </button>
                 {authError && <p style={{ color: V.danger, fontSize: 13, marginTop: 12 }}>{authError}</p>}
+              </div>
+            )}
+
+            {/* Step: Login form */}
+            {authStep === "login" && (
+              <div>
+                <button onClick={() => { setAuthStep("choose"); setAuthError(""); }} style={{ background: "none", border: "none", fontSize: 13, color: V.primary, cursor: "pointer", marginBottom: 12, padding: 0 }}>← Back</button>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: V.text, marginBottom: 4 }}>Log In</h2>
+                <p style={{ fontSize: 13, color: V.textMuted, marginBottom: 20 }}>Enter your email and we'll send you an OTP to verify.</p>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: V.textSecondary, marginBottom: 4, display: "block" }}>Email Address</label>
+                  <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} placeholder="you@example.com" style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${V.border}`, background: V.bg, color: V.text, fontSize: 14, boxSizing: "border-box" }} />
+                </div>
+                <button onClick={handleLogin} disabled={authLoading || !loginEmail} style={{ width: "100%", padding: "14px 20px", borderRadius: 12, border: "none", background: "var(--gradient-primary)", color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", marginTop: 16, opacity: (authLoading || !loginEmail) ? 0.6 : 1 }}>
+                  {authLoading ? "Verifying..." : "Continue →"}
+                </button>
+                {authError && <p style={{ color: V.danger, fontSize: 13, marginTop: 12 }}>{authError}</p>}
+                <p style={{ fontSize: 13, color: V.textMuted, marginTop: 16, textAlign: "center" }}>Don't have an account? <button onClick={() => { setAuthStep("signup"); setAuthError(""); }} style={{ background: "none", border: "none", color: V.primary, cursor: "pointer", fontWeight: 600, fontSize: 13, padding: 0 }}>Sign Up</button></p>
               </div>
             )}
 
@@ -3020,6 +3071,7 @@ export default function App() {
                   {authLoading ? "Creating account..." : "Create Account & Verify →"}
                 </button>
                 {authError && <p style={{ color: V.danger, fontSize: 13, marginTop: 12 }}>{authError}</p>}
+                <p style={{ fontSize: 13, color: V.textMuted, marginTop: 16, textAlign: "center" }}>Already have an account? <button onClick={() => { setAuthStep("login"); setAuthError(""); }} style={{ background: "none", border: "none", color: V.primary, cursor: "pointer", fontWeight: 600, fontSize: 13, padding: 0 }}>Log In</button></p>
               </div>
             )}
 
