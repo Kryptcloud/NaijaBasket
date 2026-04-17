@@ -682,7 +682,7 @@ function isPackageAvailable(pkg: FoodPackage, productList: Product[]): { availab
 // ============ OTHER CONSTANTS ============
 const PAYMENT_METHODS = [
   { id: "naira", label: "Pay with Naira (₦)", icon: "💳", desc: "Via Paystack" },
-  { id: "crypto", label: "Pay with Crypto", icon: "💰", desc: "USDT, BNB, ETH" },
+  { id: "crypto", label: "Pay with Crypto", icon: "💰", desc: "USDT or BNB via Wallet" },
 ];
 
 const MIN_ORDER = 5000;
@@ -778,6 +778,9 @@ export default function App() {
   const [placed, setPlaced] = useState<Order | null>(null);
   const [processing, setProcessing] = useState(false);
   const [paymentScreen, setPaymentScreen] = useState<any>(null);
+  const [cryptoPayStatus, setCryptoPayStatus] = useState<"idle" | "connecting" | "switching" | "sending" | "confirming" | "done" | "error">("idle");
+  const [cryptoPayError, setCryptoPayError] = useState("");
+  const [cryptoTokenChoice, setCryptoTokenChoice] = useState<"USDT" | "BNB">("USDT");
   const [copied, setCopied] = useState(false);
   const [timer, setTimer] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -1599,7 +1602,9 @@ export default function App() {
   function handlePaymentConfirmed(txHash?: string) {
     if (paymentScreen) {
       const oid = paymentScreen.order.id;
-      setOrders(prev => prev.map(o => o.id === oid ? { ...o, status: txHash ? "confirming" : "paid", txHash } : o));
+      setOrders(prev => prev.map(o => o.id === oid ? { ...o, status: txHash ? "paid" : "paid", txHash } : o));
+      // Sync to API
+      apiFetch(`/api/orders/${oid}`, { method: "PATCH", body: JSON.stringify({ status: "paid", txHash }) });
       // Award loyalty points
       earnPointsFromOrder(paymentScreen.order.total);
       // Deduct redeemed points
@@ -1608,7 +1613,119 @@ export default function App() {
         setRedeemPoints(0);
       }
       setCart([]); setPlaced(paymentScreen.order); setPaymentScreen(null); setPage("confirm");
-      showToast(txHash ? "Payment submitted! Verifying on-chain..." : "Payment confirmed! 🎉", "success");
+      setCryptoPayStatus("idle");
+      showToast("Payment confirmed! 🎉", "success");
+      sendOrderWhatsApp(paymentScreen.order);
+    }
+  }
+
+  // ===== CRYPTO WALLET PAY =====
+  const MERCHANT_WALLET = "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68";
+  const BSC_USDT = "0x55d398326f99059fF775485246999027B3197955";
+  const NGN_USD_RATE = 1580; // ~₦1,580 per $1 — update as needed
+
+  async function connectWalletAndPay() {
+    if (!paymentScreen) return;
+    const ethersLib = (window as any).ethers;
+    const ethereum = (window as any).ethereum;
+
+    if (!ethereum) {
+      setCryptoPayError("No crypto wallet detected. Please install MetaMask or Trust Wallet.");
+      setCryptoPayStatus("error");
+      return;
+    }
+    if (!ethersLib) {
+      setCryptoPayError("Crypto library not loaded. Please refresh the page.");
+      setCryptoPayStatus("error");
+      return;
+    }
+
+    const order: Order = paymentScreen.order;
+    setCryptoPayError("");
+    setCryptoPayStatus("connecting");
+
+    try {
+      // 1. Request wallet connection
+      await ethereum.request({ method: "eth_requestAccounts" });
+      const provider = new ethersLib.providers.Web3Provider(ethereum);
+      const signer = provider.getSigner();
+
+      // 2. Switch to BSC
+      setCryptoPayStatus("switching");
+      try {
+        await ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x38" }] });
+      } catch (switchErr: any) {
+        if (switchErr.code === 4902) {
+          await ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId: "0x38",
+              chainName: "BNB Smart Chain",
+              nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+              rpcUrls: ["https://bsc-dataseed.binance.org/"],
+              blockExplorerUrls: ["https://bscscan.com/"],
+            }],
+          });
+        } else if (switchErr.code === 4001) {
+          setCryptoPayError("Please switch to BNB Smart Chain to continue.");
+          setCryptoPayStatus("error");
+          return;
+        }
+      }
+
+      // 3. Send payment
+      setCryptoPayStatus("sending");
+      const usdAmount = order.total / NGN_USD_RATE;
+      let tx: any;
+
+      if (cryptoTokenChoice === "USDT") {
+        // ERC20 USDT transfer on BSC
+        const usdt = new ethersLib.Contract(BSC_USDT, [
+          "function transfer(address to, uint256 amount) returns (bool)",
+          "function balanceOf(address) view returns (uint256)",
+        ], signer);
+
+        const amountWei = ethersLib.utils.parseUnits(usdAmount.toFixed(4), 18);
+
+        // Check balance
+        const balance = await usdt.balanceOf(await signer.getAddress());
+        if (balance.lt(amountWei)) {
+          setCryptoPayError(`Insufficient USDT balance. You need ${usdAmount.toFixed(2)} USDT.`);
+          setCryptoPayStatus("error");
+          return;
+        }
+
+        tx = await usdt.transfer(MERCHANT_WALLET, amountWei);
+      } else {
+        // Native BNB transfer
+        const amountWei = ethersLib.utils.parseEther(usdAmount.toFixed(6));
+        const balance = await signer.getBalance();
+        if (balance.lt(amountWei)) {
+          setCryptoPayError(`Insufficient BNB balance. You need ~${usdAmount.toFixed(4)} BNB.`);
+          setCryptoPayStatus("error");
+          return;
+        }
+        tx = await signer.sendTransaction({ to: MERCHANT_WALLET, value: amountWei });
+      }
+
+      // 4. Wait for confirmation
+      setCryptoPayStatus("confirming");
+      showToast("Transaction sent! Waiting for blockchain confirmation...", "info");
+      const receipt = await tx.wait(1); // Wait for 1 confirmation
+
+      // 5. Auto-confirm payment
+      setCryptoPayStatus("done");
+      handlePaymentConfirmed(receipt.transactionHash);
+
+    } catch (err: any) {
+      if (err.code === 4001 || err.code === "ACTION_REJECTED") {
+        setCryptoPayError("Transaction rejected. You cancelled the payment.");
+      } else if (err.code === -32603) {
+        setCryptoPayError("Transaction failed. Please check your wallet balance.");
+      } else {
+        setCryptoPayError(err.reason || err.message || "Payment failed. Please try again.");
+      }
+      setCryptoPayStatus("error");
     }
   }
 
@@ -3262,26 +3379,87 @@ export default function App() {
               <>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>💰</div>
                 <h3 style={{ fontSize: 22, fontWeight: 800, color: V.primary, marginBottom: 6 }}>Pay with Crypto</h3>
-                <p style={{ color: V.textMuted, marginBottom: 20, fontSize: 14 }}>Send USDT, BNB, or ETH to the address below</p>
-                <div style={{ background: timer > 300 ? "var(--color-success-bg)" : timer > 60 ? "var(--color-warning-bg)" : "var(--color-danger-bg)", borderRadius: 10, padding: 10, marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, color: V.textMuted }}>⏱️ Payment Deadline</div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: timer > 300 ? V.success : timer > 60 ? V.warning : V.danger }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</div>
-                </div>
+                <p style={{ color: V.textMuted, marginBottom: 16, fontSize: 14 }}>Connect your wallet to pay automatically</p>
+
+                {/* Amount display */}
                 <div style={{ background: "var(--bg-accent-subtle)", borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                  <div style={{ fontSize: 13, color: V.textMuted, marginBottom: 4 }}>Amount</div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: V.primary }}>₦{paymentScreen.order.total.toLocaleString()}</div>
+                  <div style={{ fontSize: 13, color: V.textMuted, marginBottom: 4 }}>Order Total</div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: V.primary }}>₦{paymentScreen.order.total.toLocaleString()}</div>
+                  <div style={{ fontSize: 14, color: V.success, fontWeight: 600, marginTop: 4 }}>
+                    ≈ {(paymentScreen.order.total / NGN_USD_RATE).toFixed(2)} {cryptoTokenChoice === "USDT" ? "USDT" : "BNB"}
+                  </div>
+                  <div style={{ fontSize: 11, color: V.textMuted, marginTop: 2 }}>Rate: $1 ≈ ₦{NGN_USD_RATE.toLocaleString()}</div>
                 </div>
-                <div style={{ background: V.bg, border: `2px solid var(--border-accent)`, borderRadius: 14, padding: 20, marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, color: V.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Merchant Wallet</div>
-                  <div style={{ fontSize: 12, fontFamily: "monospace", color: V.primary, wordBreak: "break-all" as const, marginBottom: 12 }}>{paymentScreen.merchantAddress}</div>
-                  <button onClick={() => { navigator.clipboard.writeText(paymentScreen.merchantAddress); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ background: copied ? "var(--color-success-bg)" : V.bgCard, color: copied ? V.success : V.primary, border: `1px solid ${copied ? V.success : V.border}`, borderRadius: 8, padding: "8px 16px", fontWeight: 600, fontSize: 13, cursor: "pointer", width: "100%" }}>{copied ? "✓ Copied!" : "📋 Copy Address"}</button>
+
+                {/* Token selection */}
+                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                  {(["USDT", "BNB"] as const).map(tok => (
+                    <button key={tok} onClick={() => { setCryptoTokenChoice(tok); setCryptoPayStatus("idle"); setCryptoPayError(""); }}
+                      style={{ flex: 1, padding: "10px", borderRadius: 10, border: cryptoTokenChoice === tok ? `2px solid ${V.primary}` : `1px solid ${V.border}`, background: cryptoTokenChoice === tok ? "var(--bg-accent-subtle)" : V.bg, color: cryptoTokenChoice === tok ? V.primary : V.textMuted, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                      {tok === "USDT" ? "💵 USDT" : "🟡 BNB"}
+                    </button>
+                  ))}
                 </div>
-                <div style={{ marginBottom: 16, textAlign: "left" as const }}>
-                  <label style={{ fontSize: 12, color: V.textMuted, marginBottom: 6, display: "block" }}>Transaction Hash</label>
-                  <input id="txHashInput" style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 10, padding: "10px 12px", color: V.text, fontSize: 13, fontFamily: "monospace", outline: "none" }} placeholder="0x..." />
+
+                {/* Network badge */}
+                <div style={{ background: "#F0B90B22", border: "1px solid #F0B90B55", borderRadius: 8, padding: "6px 12px", marginBottom: 16, fontSize: 12, fontWeight: 600, color: "#F0B90B" }}>
+                  ⛓️ BNB Smart Chain (BSC)
                 </div>
-                <button onClick={() => { const txHash = (document.getElementById("txHashInput") as HTMLInputElement)?.value; handlePaymentConfirmed(txHash || undefined); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 12, padding: 14, fontWeight: 700, fontSize: 16, cursor: "pointer", width: "100%", marginBottom: 10, boxShadow: "var(--shadow-accent)" }}>I've Sent Payment ✓</button>
-                <button onClick={() => setPaymentScreen(null)} style={{ background: "transparent", color: V.textMuted, border: `1px solid ${V.border}`, borderRadius: 12, padding: 12, fontWeight: 600, fontSize: 14, cursor: "pointer", width: "100%" }}>Cancel</button>
+
+                {/* Payment status */}
+                {cryptoPayStatus !== "idle" && cryptoPayStatus !== "error" && (
+                  <div style={{ background: V.bgSecondary, borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {[
+                        { step: "connecting", label: "Connecting wallet...", icon: "🔗" },
+                        { step: "switching", label: "Switching to BSC...", icon: "⛓️" },
+                        { step: "sending", label: "Approve transaction in wallet...", icon: "📤" },
+                        { step: "confirming", label: "Confirming on blockchain...", icon: "⏳" },
+                        { step: "done", label: "Payment confirmed!", icon: "✅" },
+                      ].map(({ step, label, icon }) => {
+                        const isActive = cryptoPayStatus === step;
+                        const isPast = ["connecting", "switching", "sending", "confirming", "done"].indexOf(cryptoPayStatus) > ["connecting", "switching", "sending", "confirming", "done"].indexOf(step);
+                        return (
+                          <div key={step} style={{ display: "flex", alignItems: "center", gap: 10, opacity: isPast ? 0.5 : isActive ? 1 : 0.3 }}>
+                            <span style={{ fontSize: 16 }}>{isPast ? "✅" : icon}</span>
+                            <span style={{ fontSize: 13, fontWeight: isActive ? 700 : 400, color: isActive ? V.primary : V.textMuted }}>
+                              {label}
+                              {isActive && cryptoPayStatus !== "done" && <span style={{ animation: "pulse 1s infinite" }}> ●</span>}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Error display */}
+                {cryptoPayStatus === "error" && cryptoPayError && (
+                  <div style={{ background: "var(--color-danger-bg)", border: `1px solid ${V.danger}`, borderRadius: 10, padding: 14, marginBottom: 16, textAlign: "left" as const }}>
+                    <div style={{ fontSize: 13, color: V.danger, fontWeight: 600, marginBottom: 4 }}>⚠️ Payment Error</div>
+                    <div style={{ fontSize: 12, color: V.danger }}>{cryptoPayError}</div>
+                  </div>
+                )}
+
+                {/* Connect & Pay button */}
+                {(cryptoPayStatus === "idle" || cryptoPayStatus === "error") && (
+                  <button onClick={connectWalletAndPay} style={{ background: "linear-gradient(135deg, #F0B90B 0%, #E8A700 100%)", color: "#1a1a1a", border: "none", borderRadius: 12, padding: 14, fontWeight: 700, fontSize: 16, cursor: "pointer", width: "100%", marginBottom: 10, boxShadow: "0 4px 15px rgba(240,185,11,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    🦊 Connect Wallet & Pay
+                  </button>
+                )}
+
+                {/* No wallet? Install links */}
+                {(cryptoPayStatus === "idle" || cryptoPayStatus === "error") && !(window as any).ethereum && (
+                  <div style={{ background: V.bgSecondary, borderRadius: 10, padding: 14, marginBottom: 10 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: V.text, marginBottom: 8 }}>No wallet detected? Install one:</div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer" style={{ flex: 1, background: "#F6851B22", color: "#F6851B", border: "1px solid #F6851B55", borderRadius: 8, padding: "8px", fontWeight: 600, fontSize: 12, textAlign: "center", textDecoration: "none" }}>🦊 MetaMask</a>
+                      <a href="https://trustwallet.com/download" target="_blank" rel="noopener noreferrer" style={{ flex: 1, background: "#3375BB22", color: "#3375BB", border: "1px solid #3375BB55", borderRadius: 8, padding: "8px", fontWeight: 600, fontSize: 12, textAlign: "center", textDecoration: "none" }}>🛡️ Trust Wallet</a>
+                    </div>
+                  </div>
+                )}
+
+                <button onClick={() => { setPaymentScreen(null); setCryptoPayStatus("idle"); setCryptoPayError(""); }} disabled={cryptoPayStatus === "sending" || cryptoPayStatus === "confirming"} style={{ background: "transparent", color: V.textMuted, border: `1px solid ${V.border}`, borderRadius: 12, padding: 12, fontWeight: 600, fontSize: 14, cursor: "pointer", width: "100%", opacity: (cryptoPayStatus === "sending" || cryptoPayStatus === "confirming") ? 0.4 : 1 }}>Cancel</button>
               </>
             )}
           </div>
