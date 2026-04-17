@@ -37,17 +37,23 @@ interface Product {
   brands?: string[];
 }
 
-interface DeliveryArea {
+interface DeliveryLGA {
   name: string;
-  standardFee: number;
-  expressFee: number;
+  homeFee: number;
+  pickupFee: number;
+  pickupStations: string[];
+}
+
+interface DeliveryCity {
+  name: string;
+  lgas: DeliveryLGA[];
 }
 
 interface DeliveryZone {
   id: string;
   state: string;
   enabled: boolean;
-  areas: DeliveryArea[];
+  cities: DeliveryCity[];
 }
 
 interface CartItem {
@@ -72,14 +78,15 @@ interface Order {
   }>;
   subtotal: number;
   deliveryFee: number;
-  deliveryType?: "next-day" | "same-day";
+  deliveryType?: "home" | "pickup";
+  pickupStation?: string;
   total: number;
   paymentMethod: string;
   paymentRef?: string;
   txHash?: string;
   status: string;
   deliveryStatus: string;
-  customer: { name: string; phone: string; email: string; address: string; state?: string; area?: string };
+  customer: { name: string; phone: string; email: string; address: string; state?: string; city?: string; lga?: string };
   syncedAt?: string;
 }
 
@@ -785,7 +792,7 @@ export default function App() {
   });
 
   // Checkout form
-  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", state: "", area: "", payment: "naira", deliveryType: "next-day" as "next-day" | "same-day" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", state: "", city: "", lga: "", pickupStation: "", payment: "naira", deliveryType: "home" as "home" | "pickup" });
 
   // UI state
   const [placed, setPlaced] = useState<Order | null>(null);
@@ -814,30 +821,74 @@ export default function App() {
   });
 
   const DEFAULT_DELIVERY_ZONES: DeliveryZone[] = [
-    { id: "abia", state: "Abia", enabled: true, areas: [
-      { name: "Aba", standardFee: 0, expressFee: 3000 },
-      { name: "Umuahia", standardFee: 1500, expressFee: 3000 },
-      { name: "Other Abia", standardFee: 2000, expressFee: 3000 },
+    { id: "abia", state: "Abia", enabled: true, cities: [
+      { name: "Aba", lgas: [
+        { name: "Aba North", homeFee: 0, pickupFee: 0, pickupStations: ["NaijaBasket HQ, Faulks Road"] },
+        { name: "Aba South", homeFee: 0, pickupFee: 0, pickupStations: ["Ariaria Market Gate", "Shopping Center Aba"] },
+        { name: "Osisioma Ngwa", homeFee: 500, pickupFee: 0, pickupStations: ["Osisioma Junction"] },
+        { name: "Ugwunagbo", homeFee: 800, pickupFee: 300, pickupStations: ["Ugwunagbo Market"] },
+      ]},
+      { name: "Umuahia", lgas: [
+        { name: "Umuahia North", homeFee: 1500, pickupFee: 800, pickupStations: ["Umuahia Main Market"] },
+        { name: "Umuahia South", homeFee: 1500, pickupFee: 800, pickupStations: ["Ubani Market"] },
+        { name: "Ikwuano", homeFee: 2000, pickupFee: 1000, pickupStations: ["Ikwuano Junction"] },
+      ]},
     ]},
-    { id: "anambra", state: "Anambra", enabled: true, areas: [
-      { name: "Onitsha", standardFee: 2500, expressFee: 3000 },
-      { name: "Awka", standardFee: 2500, expressFee: 3000 },
-      { name: "Nnewi", standardFee: 2500, expressFee: 3000 },
-      { name: "Other Anambra", standardFee: 3000, expressFee: 3000 },
+    { id: "anambra", state: "Anambra", enabled: true, cities: [
+      { name: "Onitsha", lgas: [
+        { name: "Onitsha North", homeFee: 2500, pickupFee: 1500, pickupStations: ["Main Market Onitsha"] },
+        { name: "Onitsha South", homeFee: 2500, pickupFee: 1500, pickupStations: ["Upper Iweka"] },
+        { name: "Ogbaru", homeFee: 3000, pickupFee: 1800, pickupStations: ["Ogbaru Market"] },
+        { name: "Idemili North", homeFee: 3000, pickupFee: 1800, pickupStations: ["Ogidi Junction"] },
+      ]},
+      { name: "Awka", lgas: [
+        { name: "Awka South", homeFee: 2500, pickupFee: 1500, pickupStations: ["Aroma Junction", "Unizik Gate"] },
+        { name: "Awka North", homeFee: 3000, pickupFee: 1800, pickupStations: ["Awka North LGA Office"] },
+        { name: "Njikoka", homeFee: 3000, pickupFee: 1800, pickupStations: ["Abagana Junction"] },
+      ]},
+      { name: "Nnewi", lgas: [
+        { name: "Nnewi North", homeFee: 2500, pickupFee: 1500, pickupStations: ["Nkwo Nnewi Market"] },
+        { name: "Nnewi South", homeFee: 3000, pickupFee: 1800, pickupStations: ["Nnewi South Office"] },
+        { name: "Ekwusigo", homeFee: 3000, pickupFee: 1800, pickupStations: ["Ozubulu Junction"] },
+      ]},
     ]},
-    { id: "enugu", state: "Enugu", enabled: true, areas: [
-      { name: "Enugu", standardFee: 3000, expressFee: 3000 },
-      { name: "Nsukka", standardFee: 3500, expressFee: 3500 },
-      { name: "Other Enugu", standardFee: 3500, expressFee: 3000 },
+    { id: "enugu", state: "Enugu", enabled: true, cities: [
+      { name: "Enugu", lgas: [
+        { name: "Enugu North", homeFee: 3000, pickupFee: 1800, pickupStations: ["Ogbete Main Market", "New Haven"] },
+        { name: "Enugu South", homeFee: 3000, pickupFee: 1800, pickupStations: ["Garki, Enugu"] },
+        { name: "Enugu East", homeFee: 3000, pickupFee: 1800, pickupStations: ["Abakpa Nike"] },
+        { name: "Nkanu West", homeFee: 3500, pickupFee: 2000, pickupStations: ["Agbani Junction"] },
+      ]},
+      { name: "Nsukka", lgas: [
+        { name: "Nsukka", homeFee: 3500, pickupFee: 2000, pickupStations: ["UNN Gate", "Nsukka Main Market"] },
+        { name: "Igbo-Etiti", homeFee: 3500, pickupFee: 2000, pickupStations: ["Ogbede Junction"] },
+        { name: "Udenu", homeFee: 4000, pickupFee: 2500, pickupStations: ["Obollo-Afor Junction"] },
+      ]},
     ]},
-    { id: "imo", state: "Imo", enabled: true, areas: [
-      { name: "Owerri", standardFee: 2000, expressFee: 3000 },
-      { name: "Orlu", standardFee: 2500, expressFee: 3000 },
-      { name: "Other Imo", standardFee: 2500, expressFee: 3000 },
+    { id: "imo", state: "Imo", enabled: true, cities: [
+      { name: "Owerri", lgas: [
+        { name: "Owerri Municipal", homeFee: 2000, pickupFee: 1200, pickupStations: ["Owerri Main Market", "World Bank Area"] },
+        { name: "Owerri North", homeFee: 2500, pickupFee: 1500, pickupStations: ["Orie Uratta"] },
+        { name: "Owerri West", homeFee: 2500, pickupFee: 1500, pickupStations: ["Umuguma Junction"] },
+        { name: "Mbaitoli", homeFee: 3000, pickupFee: 1800, pickupStations: ["Mbieri Junction"] },
+      ]},
+      { name: "Orlu", lgas: [
+        { name: "Orlu", homeFee: 3000, pickupFee: 1800, pickupStations: ["Orlu Main Market"] },
+        { name: "Orsu", homeFee: 3500, pickupFee: 2000, pickupStations: ["Orsu Junction"] },
+        { name: "Oru East", homeFee: 3500, pickupFee: 2000, pickupStations: ["Omuma Junction"] },
+      ]},
     ]},
-    { id: "ebonyi", state: "Ebonyi", enabled: true, areas: [
-      { name: "Abakaliki", standardFee: 3500, expressFee: 3500 },
-      { name: "Other Ebonyi", standardFee: 4000, expressFee: 3500 },
+    { id: "rivers", state: "Rivers", enabled: true, cities: [
+      { name: "Port Harcourt", lgas: [
+        { name: "Port Harcourt City", homeFee: 3500, pickupFee: 2000, pickupStations: ["Mile 1 Market", "Rumuola Junction"] },
+        { name: "Obio-Akpor", homeFee: 3500, pickupFee: 2000, pickupStations: ["Rumuokoro", "Choba Junction"] },
+        { name: "Eleme", homeFee: 4000, pickupFee: 2500, pickupStations: ["Eleme Junction"] },
+        { name: "Ikwerre", homeFee: 4000, pickupFee: 2500, pickupStations: ["Isiokpo Junction"] },
+      ]},
+      { name: "Oyigbo", lgas: [
+        { name: "Oyigbo", homeFee: 4000, pickupFee: 2500, pickupStations: ["Oyigbo Market"] },
+        { name: "Etche", homeFee: 4500, pickupFee: 3000, pickupStations: ["Okehi Junction"] },
+      ]},
     ]},
   ];
 
@@ -1516,17 +1567,20 @@ export default function App() {
     if (!v) return sum;
     return sum + v.price * c.quantity;
   }, 0);
-  const getDeliveryFee = (state: string, area: string, type: "next-day" | "same-day"): number => {
-    if (!state || !area) return 0;
+  const getDeliveryFee = (state: string, city: string, lga: string, type: "home" | "pickup"): number => {
+    if (!state || !city || !lga) return 0;
     const zone = deliveryZones.find(z => z.state === state && z.enabled);
     if (!zone) return 0;
-    const areaData = zone.areas.find(a => a.name === area);
-    if (!areaData) return 0;
-    return areaData.standardFee + (type === "same-day" ? areaData.expressFee : 0);
+    const cityData = zone.cities.find(c => c.name === city);
+    if (!cityData) return 0;
+    const lgaData = cityData.lgas.find(l => l.name === lga);
+    if (!lgaData) return 0;
+    return type === "pickup" ? lgaData.pickupFee : lgaData.homeFee;
   };
-  const deliveryFee = form.state && form.area ? getDeliveryFee(form.state, form.area, form.deliveryType) : 0;
   const selectedZone = deliveryZones.find(z => z.state === form.state && z.enabled);
-  const selectedAreaData = selectedZone?.areas.find(a => a.name === form.area);
+  const selectedCity = selectedZone?.cities.find(c => c.name === form.city);
+  const selectedLGA = selectedCity?.lgas.find(l => l.name === form.lga);
+  const deliveryFee = form.state && form.city && form.lga ? getDeliveryFee(form.state, form.city, form.lga, form.deliveryType) : 0;
   // First-order ₦500 discount
   const isFirstOrder = orders.length === 0;
   const firstOrderDiscount = isFirstOrder && cartSubtotal >= MIN_ORDER ? 500 : 0;
@@ -1576,7 +1630,8 @@ export default function App() {
   }
 
   async function placeOrder() {
-    if (!form.name || !form.phone || !form.address || !form.state || !form.area) { showToast("Please fill in all delivery details (name, phone, state, area & address)", "error"); return; }
+    if (!form.name || !form.phone || !form.state || !form.city || !form.lga) { showToast("Please fill in all delivery details (name, phone & location)", "error"); return; }
+    if (form.deliveryType === "home" && !form.address) { showToast("Please enter your street address for home delivery", "error"); return; }
     if (cartSubtotal < MIN_ORDER) { showToast(`Minimum order is ₦${MIN_ORDER.toLocaleString()}.`, "error"); return; }
     // Auth gate — require sign-up at checkout, not at cart
     if (!isUserFullyVerified) {
@@ -1596,8 +1651,9 @@ export default function App() {
     const order: Order = {
       id: generateOrderId(), date: new Date().toISOString(), items: orderItems,
       subtotal: cartSubtotal, deliveryFee, total: cartTotal, paymentMethod: form.payment, deliveryType: form.deliveryType,
+      ...(form.deliveryType === "pickup" && form.pickupStation ? { pickupStation: form.pickupStation } : {}),
       status: "pending", deliveryStatus: "preparing",
-      customer: { name: form.name, phone: form.phone, email: form.email, address: `${form.address}, ${form.area}, ${form.state} State`, state: form.state, area: form.area },
+      customer: { name: form.name, phone: form.phone, email: form.email, address: form.deliveryType === "pickup" ? `Pickup: ${form.pickupStation || form.lga}, ${form.city}, ${form.state}` : `${form.address}, ${form.lga}, ${form.city}, ${form.state} State`, state: form.state, city: form.city, lga: form.lga },
     };
 
     try {
@@ -1656,7 +1712,7 @@ export default function App() {
   // Send order receipt PNG to WhatsApp
   function sendOrderWhatsApp(order: Order) {
     const items = order.items.map(i => `• ${i.name} (${i.variant}) ×${i.quantity} = ₦${i.total.toLocaleString()}`).join("\n");
-    const msg = `🧺 *NEW ORDER — NaijaBasket*\n\nOrder: ${order.id}\nCustomer: ${order.customer.name}\nPhone: ${order.customer.phone}\nDelivery to: ${order.customer.address}\n\n${items}\n\nSubtotal: ₦${order.subtotal.toLocaleString()}\nDelivery: ${order.deliveryFee === 0 ? "FREE" : `₦${order.deliveryFee.toLocaleString()}`}${order.deliveryType === "same-day" ? " (Express ⚡)" : " (Standard)"}\n*Total: ₦${order.total.toLocaleString()}*\nPayment: ${order.paymentMethod === "naira" ? "Paystack" : "Crypto"} — ${order.status}`;
+    const msg = `🧺 *NEW ORDER — NaijaBasket*\n\nOrder: ${order.id}\nCustomer: ${order.customer.name}\nPhone: ${order.customer.phone}\n${order.deliveryType === "pickup" ? `Pickup: ${order.pickupStation || order.customer.address}` : `Deliver to: ${order.customer.address}`}\n\n${items}\n\nSubtotal: ₦${order.subtotal.toLocaleString()}\n${order.deliveryType === "pickup" ? "Pickup" : "Delivery"} Fee: ${order.deliveryFee === 0 ? "FREE" : `₦${order.deliveryFee.toLocaleString()}`}\n*Total: ₦${order.total.toLocaleString()}*\nPayment: ${order.paymentMethod === "naira" ? "Paystack" : "Crypto"} — ${order.status}`;
 
     // Generate PNG receipt canvas (same as downloadReceipt)
     const receiptCanvas = generateReceiptCanvas(order);
@@ -2316,7 +2372,7 @@ export default function App() {
     ctx.textAlign = "right"; ctx.fillText(`₦${order.subtotal.toLocaleString()}`, W - PAD - 6, y); ctx.textAlign = "left";
     y += 18;
     const delFee = order.deliveryFee === 0 ? "FREE" : `₦${order.deliveryFee.toLocaleString()}`;
-    ctx.fillText(`Delivery${order.deliveryType === "same-day" ? " (Express ⚡)" : ""}:`, PAD + 6, y);
+    ctx.fillText(`${order.deliveryType === "pickup" ? "Pickup" : "Delivery"} Fee:`, PAD + 6, y);
     ctx.textAlign = "right"; ctx.fillText(delFee, W - PAD - 6, y); ctx.textAlign = "left";
     y += 22;
     ctx.font = "bold 15px Arial, sans-serif"; ctx.fillStyle = "#166534";
@@ -2633,7 +2689,7 @@ export default function App() {
               {/* Totals */}
               <div style={{ background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 12, padding: 16, marginBottom: 20, marginTop: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 14 }}><span style={{ color: V.textSecondary }}>Subtotal</span><span style={{ fontWeight: 600 }}>₦{cartSubtotal.toLocaleString()}</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 14 }}><span style={{ color: V.textSecondary }}>Delivery{form.state && form.area ? ` to ${form.area}` : ""}{form.deliveryType === "same-day" ? " (Express ⚡)" : ""}</span><span style={{ fontWeight: 600, color: deliveryFee === 0 ? V.success : V.text }}>{!form.state || !form.area ? "Select location" : deliveryFee === 0 ? "FREE" : `₦${deliveryFee.toLocaleString()}`}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 14 }}><span style={{ color: V.textSecondary }}>{form.deliveryType === "pickup" ? "📍 Pickup" : "🚚 Delivery"}{form.lga ? ` — ${form.lga}` : ""}</span><span style={{ fontWeight: 600, color: deliveryFee === 0 ? V.success : V.text }}>{!form.state || !form.city || !form.lga ? "Select location" : deliveryFee === 0 ? "FREE" : `₦${deliveryFee.toLocaleString()}`}</span></div>
                 {/* Loyalty Points Redemption */}
                 {isUserFullyVerified && userPoints > 0 && (
                   <div style={{ background: V.bgSecondary, borderRadius: 10, padding: "10px 12px", marginBottom: 8, border: `1px solid ${V.borderSubtle}` }}>
@@ -2653,16 +2709,16 @@ export default function App() {
                 <div style={{ borderTop: `1px solid ${V.border}`, paddingTop: 8, display: "flex", justifyContent: "space-between" }}><span style={{ fontWeight: 700, fontSize: 16 }}>Total</span><span style={{ fontWeight: 800, fontSize: 20, color: V.primary }}>₦{cartTotal.toLocaleString()}</span></div>
                 {cartSubtotal < MIN_ORDER && <div style={{ marginTop: 8, fontSize: 13, color: V.warning, fontWeight: 500 }}>⚠️ Minimum order: ₦{MIN_ORDER.toLocaleString()}. Add ₦{(MIN_ORDER - cartSubtotal).toLocaleString()} more.</div>}
               </div>
-              <div style={{ background: "var(--color-info-bg)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: V.textSecondary, marginBottom: 20 }}>🚚 Within Aba: <strong>FREE delivery</strong>. Outside Aba: ₦2,500.</div>
+              <div style={{ background: "var(--color-info-bg)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: V.textSecondary, marginBottom: 20 }}>🚚 <strong>FREE delivery</strong> within Aba • Pickup stations available across South-East & Rivers</div>
               {/* Estimated delivery date */}
               <div style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 12, padding: "12px 14px", marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 20 }}>📅</span>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: V.text }}>Estimated Delivery</div>
                   <div style={{ fontSize: 12, color: V.textMuted }}>
-                    {form.deliveryType === "same-day"
-                      ? `Today, ${new Date().toLocaleDateString("en-NG", { weekday: "short", month: "short", day: "numeric" })} (before 6pm)`
-                      : (() => { const d = new Date(); d.setDate(d.getDate() + 1); if (d.getDay() === 0) d.setDate(d.getDate() + 1); return `${d.toLocaleDateString("en-NG", { weekday: "short", month: "short", day: "numeric" })} (Next business day)`; })()
+                    {form.deliveryType === "pickup"
+                      ? `Ready for pickup within 24hrs${form.pickupStation ? ` at ${form.pickupStation}` : ""}`
+                      : (() => { const d = new Date(); d.setDate(d.getDate() + 1); if (d.getDay() === 0) d.setDate(d.getDate() + 1); return `${d.toLocaleDateString("en-NG", { weekday: "short", month: "short", day: "numeric" })} — Next business day`; })()
                     }
                   </div>
                 </div>
@@ -2681,54 +2737,77 @@ export default function App() {
                   </div>
                 ))}
 
-                {/* Delivery Location — Jumia-style state/area selector */}
+                {/* Delivery Location — State → City → LGA */}
                 <label style={{ fontSize: 13, color: V.textMuted, marginBottom: 8, display: "block", fontWeight: 600 }}>📍 Delivery Location</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
                   <div>
                     <label style={{ fontSize: 11, color: V.textMuted, marginBottom: 4, display: "block" }}>State</label>
-                    <select value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value, area: "" }))} style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px 14px", color: V.text, fontSize: 14, outline: "none", cursor: "pointer" }}>
-                      <option value="">Select State</option>
+                    <select value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value, city: "", lga: "", pickupStation: "" }))} style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px 10px", color: V.text, fontSize: 13, outline: "none", cursor: "pointer" }}>
+                      <option value="">State</option>
                       {deliveryZones.filter(z => z.enabled).map(z => <option key={z.id} value={z.state}>{z.state}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, color: V.textMuted, marginBottom: 4, display: "block" }}>City / Area</label>
-                    <select value={form.area} onChange={e => setForm(f => ({ ...f, area: e.target.value }))} disabled={!form.state} style={{ width: "100%", background: V.bg, border: `1px solid ${form.state ? V.border : V.borderSubtle}`, borderRadius: 10, padding: "12px 14px", color: form.state ? V.text : V.textMuted, fontSize: 14, outline: "none", cursor: form.state ? "pointer" : "not-allowed", opacity: form.state ? 1 : 0.6 }}>
-                      <option value="">{form.state ? "Select Area" : "Pick state first"}</option>
-                      {selectedZone?.areas.map(a => <option key={a.name} value={a.name}>{a.name}</option>)}
+                    <label style={{ fontSize: 11, color: V.textMuted, marginBottom: 4, display: "block" }}>City</label>
+                    <select value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value, lga: "", pickupStation: "" }))} disabled={!form.state} style={{ width: "100%", background: V.bg, border: `1px solid ${form.state ? V.border : V.borderSubtle}`, borderRadius: 10, padding: "12px 10px", color: form.state ? V.text : V.textMuted, fontSize: 13, outline: "none", cursor: form.state ? "pointer" : "not-allowed", opacity: form.state ? 1 : 0.6 }}>
+                      <option value="">{form.state ? "City" : "—"}</option>
+                      {selectedZone?.cities.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, color: V.textMuted, marginBottom: 4, display: "block" }}>LGA</label>
+                    <select value={form.lga} onChange={e => setForm(f => ({ ...f, lga: e.target.value, pickupStation: "" }))} disabled={!form.city} style={{ width: "100%", background: V.bg, border: `1px solid ${form.city ? V.border : V.borderSubtle}`, borderRadius: 10, padding: "12px 10px", color: form.city ? V.text : V.textMuted, fontSize: 13, outline: "none", cursor: form.city ? "pointer" : "not-allowed", opacity: form.city ? 1 : 0.6 }}>
+                      <option value="">{form.city ? "LGA" : "—"}</option>
+                      {selectedCity?.lgas.map(l => <option key={l.name} value={l.name}>{l.name}</option>)}
                     </select>
                   </div>
                 </div>
-                {/* Delivery fee preview */}
-                {form.state && form.area && selectedAreaData && (
-                  <div style={{ background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 13, color: V.textSecondary }}>🚚 Delivery to <strong>{form.area}, {form.state}</strong></span>
-                    <span style={{ fontWeight: 700, fontSize: 14, color: selectedAreaData.standardFee === 0 ? V.success : V.primary }}>{selectedAreaData.standardFee === 0 ? "FREE" : `₦${selectedAreaData.standardFee.toLocaleString()}`}</span>
-                  </div>
+
+                {/* Delivery Method — Home vs Pickup */}
+                {form.lga && selectedLGA && (
+                  <>
+                    <label style={{ fontSize: 13, color: V.textMuted, marginBottom: 8, display: "block", fontWeight: 600 }}>🚚 Delivery Method</label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                      <button onClick={() => setForm(f => ({ ...f, deliveryType: "home" as const, pickupStation: "" }))} style={{ background: form.deliveryType === "home" ? "var(--bg-accent-muted)" : V.bgCard, border: `2px solid ${form.deliveryType === "home" ? V.primary : V.border}`, borderRadius: 12, padding: "14px", cursor: "pointer", textAlign: "left" as const }}>
+                        <div style={{ fontSize: 20, marginBottom: 4 }}>🏠</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: V.text }}>Home Delivery</div>
+                        <div style={{ fontSize: 12, color: V.textMuted }}>Delivered to your door</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: selectedLGA.homeFee === 0 ? V.success : V.primary, marginTop: 4 }}>{selectedLGA.homeFee === 0 ? "FREE" : `₦${selectedLGA.homeFee.toLocaleString()}`}</div>
+                      </button>
+                      <button onClick={() => setForm(f => ({ ...f, deliveryType: "pickup" as const, pickupStation: selectedLGA.pickupStations[0] || "" }))} style={{ background: form.deliveryType === "pickup" ? "var(--bg-accent-muted)" : V.bgCard, border: `2px solid ${form.deliveryType === "pickup" ? V.primary : V.border}`, borderRadius: 12, padding: "14px", cursor: "pointer", textAlign: "left" as const }}>
+                        <div style={{ fontSize: 20, marginBottom: 4 }}>📍</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: V.text }}>Pickup Station</div>
+                        <div style={{ fontSize: 12, color: V.textMuted }}>Collect from a station</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: selectedLGA.pickupFee === 0 ? V.success : V.primary, marginTop: 4 }}>{selectedLGA.pickupFee === 0 ? "FREE" : `₦${selectedLGA.pickupFee.toLocaleString()}`}</div>
+                      </button>
+                    </div>
+
+                    {/* Pickup station selector */}
+                    {form.deliveryType === "pickup" && selectedLGA.pickupStations.length > 0 && (
+                      <div style={{ marginBottom: 12 }}>
+                        <label style={{ fontSize: 11, color: V.textMuted, marginBottom: 4, display: "block" }}>Select Pickup Station</label>
+                        <select value={form.pickupStation} onChange={e => setForm(f => ({ ...f, pickupStation: e.target.value }))} style={{ width: "100%", background: V.bg, border: `1px solid ${V.primary}`, borderRadius: 10, padding: "12px 14px", color: V.text, fontSize: 14, outline: "none", cursor: "pointer" }}>
+                          {selectedLGA.pickupStations.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Fee preview */}
+                    <div style={{ background: "var(--bg-accent-subtle)", border: `1px solid var(--border-accent)`, borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 13, color: V.textSecondary }}>{form.deliveryType === "pickup" ? "📍 Pickup" : "🏠 Home delivery"} — <strong>{form.lga}, {form.city}</strong></span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: deliveryFee === 0 ? V.success : V.primary }}>{deliveryFee === 0 ? "FREE" : `₦${deliveryFee.toLocaleString()}`}</span>
+                    </div>
+                  </>
                 )}
+
                 {!form.state && (
-                  <div style={{ fontSize: 12, color: V.textMuted, marginBottom: 12, fontStyle: "italic" }}>Select your state & area to see delivery fees</div>
+                  <div style={{ fontSize: 12, color: V.textMuted, marginBottom: 12, fontStyle: "italic" }}>Select your state, city & LGA to see delivery options</div>
                 )}
                 <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontSize: 11, color: V.textMuted, marginBottom: 4, display: "block" }}>Street Address</label>
-                  <input style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px 14px", color: V.text, fontSize: 15, outline: "none" }} value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="e.g. 12 Faulks Road" />
+                  <label style={{ fontSize: 11, color: V.textMuted, marginBottom: 4, display: "block" }}>{form.deliveryType === "pickup" ? "Contact Address (optional)" : "Street Address"}</label>
+                  <input style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px 14px", color: V.text, fontSize: 15, outline: "none" }} value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder={form.deliveryType === "pickup" ? "Optional — for contact purposes" : "e.g. 12 Faulks Road"} />
                 </div>
 
-                <label style={{ fontSize: 13, color: V.textMuted, marginBottom: 8, display: "block" }}>Delivery Speed</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
-                  <button onClick={() => setForm(f => ({ ...f, deliveryType: "next-day" as const }))} style={{ background: form.deliveryType === "next-day" ? "var(--bg-accent-muted)" : V.bgCard, border: `2px solid ${form.deliveryType === "next-day" ? V.primary : V.border}`, borderRadius: 12, padding: "14px", cursor: "pointer", textAlign: "left" as const }}>
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>📦</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: V.text }}>Standard</div>
-                    <div style={{ fontSize: 12, color: V.textMuted }}>Next-day delivery</div>
-                    {form.state && form.area && selectedAreaData && <div style={{ fontSize: 12, fontWeight: 700, color: selectedAreaData.standardFee === 0 ? V.success : V.primary, marginTop: 4 }}>{selectedAreaData.standardFee === 0 ? "FREE" : `₦${selectedAreaData.standardFee.toLocaleString()}`}</div>}
-                  </button>
-                  <button onClick={() => setForm(f => ({ ...f, deliveryType: "same-day" as const }))} style={{ background: form.deliveryType === "same-day" ? "var(--bg-accent-muted)" : V.bgCard, border: `2px solid ${form.deliveryType === "same-day" ? V.primary : V.border}`, borderRadius: 12, padding: "14px", cursor: "pointer", textAlign: "left" as const }}>
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>⚡</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: V.text }}>Express</div>
-                    <div style={{ fontSize: 12, color: V.textMuted }}>Same-day delivery</div>
-                    {form.state && form.area && selectedAreaData && <div style={{ fontSize: 12, fontWeight: 700, color: V.primary, marginTop: 4 }}>₦{(selectedAreaData.standardFee + selectedAreaData.expressFee).toLocaleString()}</div>}
-                  </button>
-                </div>
                 <label style={{ fontSize: 13, color: V.textMuted, marginBottom: 8, display: "block" }}>Payment Method</label>
                 <div className="nb-pay-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
                   {PAYMENT_METHODS.map(pm => (
@@ -2802,7 +2881,7 @@ export default function App() {
             <ul style={{ margin: 0, paddingLeft: 20, color: V.textSecondary, lineHeight: 2, fontSize: 14 }}>
               <li><strong>50+ products</strong> — Rice, beans, garri, oils, vegetables, proteins, spices & more</li>
               <li><strong>Ready-made packs</strong> — Soup, stew & home packages with up to 5% savings</li>
-              <li><strong>Free delivery</strong> within Aba. Same-day delivery available ⚡</li>
+              <li><strong>Free delivery</strong> within Aba. Home delivery & pickup stations available</li>
               <li><strong>Secure payments</strong> — Pay with Paystack (card/bank) or cryptocurrency</li>
               <li><strong>₦500 off</strong> your first order — no code needed!</li>
             </ul>
@@ -3434,7 +3513,7 @@ export default function App() {
                     {/* Totals */}
                     <div style={{ background: V.bgSecondary, borderRadius: 10, padding: 14, marginBottom: 14 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}><span style={{ color: V.textMuted }}>Subtotal</span><span style={{ color: V.text }}>₦{crmOrderDetail.subtotal.toLocaleString()}</span></div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}><span style={{ color: V.textMuted }}>Delivery{crmOrderDetail.deliveryType === "same-day" ? " (Same-Day ⚡)" : ""}</span><span style={{ color: V.text }}>{crmOrderDetail.deliveryFee === 0 ? "FREE" : `₦${crmOrderDetail.deliveryFee.toLocaleString()}`}</span></div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}><span style={{ color: V.textMuted }}>{crmOrderDetail.deliveryType === "pickup" ? "📍 Pickup" : "🚚 Delivery"}</span><span style={{ color: V.text }}>{crmOrderDetail.deliveryFee === 0 ? "FREE" : `₦${crmOrderDetail.deliveryFee.toLocaleString()}`}</span></div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 700, borderTop: `1px solid ${V.border}`, paddingTop: 8, marginTop: 4 }}><span style={{ color: V.primary }}>Total</span><span style={{ color: V.primary }}>₦{crmOrderDetail.total.toLocaleString()}</span></div>
                     </div>
 
@@ -3658,12 +3737,12 @@ export default function App() {
               </div>
               <div style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 14, padding: 24, marginTop: 20 }}>
                 <h4 style={{ fontSize: 15, fontWeight: 700, color: V.text, marginBottom: 4 }}>🚚 Delivery Zones & Pricing</h4>
-                <p style={{ fontSize: 12, color: V.textMuted, margin: "0 0 16px" }}>Set delivery fees per state and area. Express fee is added on top of standard fee for same-day delivery.</p>
+                <p style={{ fontSize: 12, color: V.textMuted, margin: "0 0 16px" }}>Manage delivery zones: State → City → LGA. Set home delivery & pickup station fees per LGA.</p>
 
                 {/* Zone Cards */}
                 {deliveryZones.map((zone, zi) => (
-                  <div key={zone.id} style={{ background: V.bgSecondary, border: `1px solid ${zone.enabled ? V.border : V.danger}`, borderRadius: 12, padding: 16, marginBottom: 12, opacity: zone.enabled ? 1 : 0.6 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div key={zone.id} style={{ background: V.bgSecondary, border: `1px solid ${zone.enabled ? V.border : V.danger}`, borderRadius: 12, padding: 16, marginBottom: 14, opacity: zone.enabled ? 1 : 0.6 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <input value={zone.state} onChange={e => { const z = [...deliveryZones]; z[zi] = { ...z[zi], state: e.target.value }; setDeliveryZones(z); }} style={{ background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "6px 10px", color: V.text, fontSize: 14, fontWeight: 700, outline: "none", width: 130 }} />
                         <button onClick={() => { const z = [...deliveryZones]; z[zi] = { ...z[zi], enabled: !z[zi].enabled }; setDeliveryZones(z); }} style={{ background: zone.enabled ? "var(--color-success-bg)" : "var(--color-danger-bg)", color: zone.enabled ? V.success : V.danger, border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
@@ -3672,41 +3751,61 @@ export default function App() {
                       </div>
                       <button onClick={() => { if (confirm(`Remove ${zone.state} zone?`)) setDeliveryZones(prev => prev.filter((_, i) => i !== zi)); }} style={{ background: "none", border: "none", color: V.danger, cursor: "pointer", fontSize: 14 }}>🗑️</button>
                     </div>
-                    {/* Area rows */}
-                    <div style={{ overflowX: "auto" }}>
-                      <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
-                        <thead><tr style={{ color: V.textMuted }}>
-                          <th style={{ textAlign: "left", padding: "4px 6px", fontWeight: 600 }}>Area</th>
-                          <th style={{ textAlign: "right", padding: "4px 6px", fontWeight: 600 }}>Standard (₦)</th>
-                          <th style={{ textAlign: "right", padding: "4px 6px", fontWeight: 600 }}>Express Extra (₦)</th>
-                          <th style={{ width: 30 }}></th>
-                        </tr></thead>
-                        <tbody>
-                          {zone.areas.map((area, ai) => (
-                            <tr key={ai} style={{ borderTop: `1px solid ${V.borderSubtle}` }}>
-                              <td style={{ padding: "6px" }}>
-                                <input value={area.name} onChange={e => { const z = [...deliveryZones]; z[zi].areas[ai] = { ...z[zi].areas[ai], name: e.target.value }; setDeliveryZones(z); }} style={{ background: V.bg, border: `1px solid ${V.borderSubtle}`, borderRadius: 6, padding: "4px 8px", color: V.text, fontSize: 12, outline: "none", width: "100%" }} />
-                              </td>
-                              <td style={{ padding: "6px" }}>
-                                <input type="number" value={area.standardFee} onChange={e => { const z = [...deliveryZones]; z[zi].areas[ai] = { ...z[zi].areas[ai], standardFee: Math.max(0, Number(e.target.value)) }; setDeliveryZones(z); }} style={{ background: V.bg, border: `1px solid ${V.borderSubtle}`, borderRadius: 6, padding: "4px 8px", color: area.standardFee === 0 ? V.success : V.text, fontSize: 12, outline: "none", width: 80, textAlign: "right" }} />
-                              </td>
-                              <td style={{ padding: "6px" }}>
-                                <input type="number" value={area.expressFee} onChange={e => { const z = [...deliveryZones]; z[zi].areas[ai] = { ...z[zi].areas[ai], expressFee: Math.max(0, Number(e.target.value)) }; setDeliveryZones(z); }} style={{ background: V.bg, border: `1px solid ${V.borderSubtle}`, borderRadius: 6, padding: "4px 8px", color: V.text, fontSize: 12, outline: "none", width: 80, textAlign: "right" }} />
-                              </td>
-                              <td style={{ padding: "6px", textAlign: "center" }}>
-                                {zone.areas.length > 1 && <button onClick={() => { const z = [...deliveryZones]; z[zi].areas = z[zi].areas.filter((_, i) => i !== ai); setDeliveryZones(z); }} style={{ background: "none", border: "none", color: V.danger, cursor: "pointer", fontSize: 11, padding: 2 }}>✕</button>}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <button onClick={() => { const z = [...deliveryZones]; z[zi].areas = [...z[zi].areas, { name: "", standardFee: 2500, expressFee: 3000 }]; setDeliveryZones(z); }} style={{ background: "var(--bg-accent-subtle)", color: V.primary, border: `1px dashed ${V.border}`, borderRadius: 8, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontWeight: 600, marginTop: 8 }}>+ Add Area</button>
+
+                    {/* Cities within zone */}
+                    {zone.cities.map((city, ci) => (
+                      <div key={ci} style={{ background: V.bg, border: `1px solid ${V.borderSubtle}`, borderRadius: 10, padding: 12, marginBottom: 8 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 12, color: V.textMuted }}>🏙️</span>
+                            <input value={city.name} onChange={e => { const z = [...deliveryZones]; z[zi].cities[ci] = { ...z[zi].cities[ci], name: e.target.value }; setDeliveryZones(z); }} style={{ background: "transparent", border: `1px solid ${V.borderSubtle}`, borderRadius: 6, padding: "4px 8px", color: V.text, fontSize: 13, fontWeight: 600, outline: "none", width: 120 }} />
+                          </div>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <button onClick={() => { const z = [...deliveryZones]; z[zi].cities[ci].lgas = [...z[zi].cities[ci].lgas, { name: "", homeFee: 2500, pickupFee: 1500, pickupStations: [""] }]; setDeliveryZones(z); }} style={{ background: "var(--bg-accent-subtle)", color: V.primary, border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 10, cursor: "pointer", fontWeight: 600 }}>+ LGA</button>
+                            {zone.cities.length > 1 && <button onClick={() => { const z = [...deliveryZones]; z[zi].cities = z[zi].cities.filter((_, i) => i !== ci); setDeliveryZones(z); }} style={{ background: "none", border: "none", color: V.danger, cursor: "pointer", fontSize: 11, padding: 2 }}>✕</button>}
+                          </div>
+                        </div>
+                        {/* LGA table */}
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", fontSize: 11, borderCollapse: "collapse", minWidth: 420 }}>
+                            <thead><tr style={{ color: V.textMuted }}>
+                              <th style={{ textAlign: "left", padding: "3px 4px", fontWeight: 600 }}>LGA</th>
+                              <th style={{ textAlign: "right", padding: "3px 4px", fontWeight: 600 }}>🏠 Home (₦)</th>
+                              <th style={{ textAlign: "right", padding: "3px 4px", fontWeight: 600 }}>📍 Pickup (₦)</th>
+                              <th style={{ textAlign: "left", padding: "3px 4px", fontWeight: 600 }}>Pickup Stations</th>
+                              <th style={{ width: 24 }}></th>
+                            </tr></thead>
+                            <tbody>
+                              {city.lgas.map((lga, li) => (
+                                <tr key={li} style={{ borderTop: `1px solid ${V.borderSubtle}` }}>
+                                  <td style={{ padding: "5px 4px" }}>
+                                    <input value={lga.name} onChange={e => { const z = [...deliveryZones]; z[zi].cities[ci].lgas[li] = { ...lga, name: e.target.value }; setDeliveryZones(z); }} style={{ background: V.bgSecondary, border: `1px solid ${V.borderSubtle}`, borderRadius: 4, padding: "3px 6px", color: V.text, fontSize: 11, outline: "none", width: 90 }} />
+                                  </td>
+                                  <td style={{ padding: "5px 4px" }}>
+                                    <input type="number" value={lga.homeFee} onChange={e => { const z = [...deliveryZones]; z[zi].cities[ci].lgas[li] = { ...lga, homeFee: Math.max(0, Number(e.target.value)) }; setDeliveryZones(z); }} style={{ background: V.bgSecondary, border: `1px solid ${V.borderSubtle}`, borderRadius: 4, padding: "3px 6px", color: lga.homeFee === 0 ? V.success : V.text, fontSize: 11, outline: "none", width: 65, textAlign: "right" }} />
+                                  </td>
+                                  <td style={{ padding: "5px 4px" }}>
+                                    <input type="number" value={lga.pickupFee} onChange={e => { const z = [...deliveryZones]; z[zi].cities[ci].lgas[li] = { ...lga, pickupFee: Math.max(0, Number(e.target.value)) }; setDeliveryZones(z); }} style={{ background: V.bgSecondary, border: `1px solid ${V.borderSubtle}`, borderRadius: 4, padding: "3px 6px", color: lga.pickupFee === 0 ? V.success : V.text, fontSize: 11, outline: "none", width: 65, textAlign: "right" }} />
+                                  </td>
+                                  <td style={{ padding: "5px 4px" }}>
+                                    <input value={lga.pickupStations.join(", ")} onChange={e => { const z = [...deliveryZones]; z[zi].cities[ci].lgas[li] = { ...lga, pickupStations: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }; setDeliveryZones(z); }} placeholder="Station 1, Station 2" style={{ background: V.bgSecondary, border: `1px solid ${V.borderSubtle}`, borderRadius: 4, padding: "3px 6px", color: V.text, fontSize: 10, outline: "none", width: "100%" }} />
+                                  </td>
+                                  <td style={{ padding: "5px 2px", textAlign: "center" }}>
+                                    {city.lgas.length > 1 && <button onClick={() => { const z = [...deliveryZones]; z[zi].cities[ci].lgas = z[zi].cities[ci].lgas.filter((_, i) => i !== li); setDeliveryZones(z); }} style={{ background: "none", border: "none", color: V.danger, cursor: "pointer", fontSize: 10, padding: 1 }}>✕</button>}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))}
+                    <button onClick={() => { const z = [...deliveryZones]; z[zi].cities = [...z[zi].cities, { name: "", lgas: [{ name: "", homeFee: 2500, pickupFee: 1500, pickupStations: [""] }] }]; setDeliveryZones(z); }} style={{ background: "var(--bg-accent-subtle)", color: V.primary, border: `1px dashed ${V.border}`, borderRadius: 8, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontWeight: 600, marginTop: 4 }}>+ Add City</button>
                   </div>
                 ))}
 
                 {/* Add new zone */}
-                <button onClick={() => setDeliveryZones(prev => [...prev, { id: `zone_${Date.now()}`, state: "", enabled: true, areas: [{ name: "", standardFee: 2500, expressFee: 3000 }] }])} style={{ background: "var(--bg-accent-subtle)", color: V.primary, border: `1px dashed ${V.primary}`, borderRadius: 10, padding: "10px 18px", fontSize: 13, cursor: "pointer", fontWeight: 600, width: "100%", marginBottom: 12 }}>+ Add New State Zone</button>
+                <button onClick={() => setDeliveryZones(prev => [...prev, { id: `zone_${Date.now()}`, state: "", enabled: true, cities: [{ name: "", lgas: [{ name: "", homeFee: 2500, pickupFee: 1500, pickupStations: [""] }] }] }])} style={{ background: "var(--bg-accent-subtle)", color: V.primary, border: `1px dashed ${V.primary}`, borderRadius: 10, padding: "10px 18px", fontSize: 13, cursor: "pointer", fontWeight: 600, width: "100%", marginBottom: 12 }}>+ Add New State Zone</button>
 
                 <div style={{ display: "flex", gap: 10 }}>
                   <button onClick={() => { localStorage.setItem("nb_delivery_zones", JSON.stringify(deliveryZones)); showToast("Delivery zones saved!", "success"); }} style={{ flex: 1, background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>💾 Save All Zones</button>
