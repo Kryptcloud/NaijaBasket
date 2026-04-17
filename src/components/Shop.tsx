@@ -70,6 +70,10 @@ interface UserAccount {
   loyaltyPoints: number;
   referralCode: string;
   referredBy?: string;
+  avatar?: string;
+  displayName?: string;
+  savedAddress?: string;
+  loyaltyTier?: "bronze" | "silver" | "gold";
 }
 
 interface ShopProps {
@@ -96,6 +100,8 @@ interface ShopProps {
   currentUser: UserAccount | null;
   wishlist: number[];
   onToggleWishlist: (productId: number) => void;
+  buyAgainProductIds?: number[];
+  topReviews?: { userName: string; rating: number; comment: string; productName: string }[];
 }
 
 export function Shop({
@@ -103,7 +109,7 @@ export function Shop({
   cart, cartCount, cartTotal, onAddToCart, onAddPackage, onEditPackage,
   onNavigate, darkMode, calcPackagePrice, isPackageAvailable, showToast,
   flashDeal, dealCountdown, getProductRating, onReview, currentUser,
-  wishlist, onToggleWishlist,
+  wishlist, onToggleWishlist, buyAgainProductIds, topReviews,
 }: ShopProps) {
   const [selectedVariants, setSelectedVariants] = useState<Record<number, string>>({});
   const [selectedBrands, setSelectedBrands] = useState<Record<number, string>>({});
@@ -358,6 +364,54 @@ export function Shop({
         <>
           {searchQuery && <p style={{ color: V.textMuted, fontSize: 13, marginBottom: 12 }}>{filteredProducts.length} result{filteredProducts.length !== 1 ? "s" : ""} for "{searchQuery}"</p>}
 
+          {/* ===== BUY AGAIN ===== */}
+          {!searchQuery && buyAgainProductIds && buyAgainProductIds.length > 0 && selectedCategory === "all" && (
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: V.text, margin: "0 0 12px" }}>🔄 Buy Again</h3>
+              <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
+                {buyAgainProductIds.slice(0, 6).map(pid => {
+                  const p = products.find(pr => pr.id === pid);
+                  if (!p || !p.inStock) return null;
+                  const v = p.variants[0];
+                  return (
+                    <div key={pid} onClick={() => setViewProduct(p)} style={{ minWidth: 120, background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 12, padding: 12, textAlign: "center", cursor: "pointer", flexShrink: 0 }}>
+                      <div style={{ fontSize: 32, marginBottom: 4 }}>{p.img}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: V.text, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: V.primary }}>₦{v.price.toLocaleString()}</div>
+                      <button onClick={e => { e.stopPropagation(); onAddToCart(p.id, v.id); }} style={{ marginTop: 6, background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 8, padding: "5px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", width: "100%" }}>+ Add</button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ===== QUICK PICKS (Popular) ===== */}
+          {!searchQuery && selectedCategory === "all" && (() => {
+            const popular = products.filter(p => p.inStock).map(p => ({ ...p, rating: getProductRating(p.id) })).filter(p => p.rating.count > 0).sort((a, b) => b.rating.avg - a.rating.avg || b.rating.count - a.rating.count).slice(0, 5);
+            if (popular.length === 0) return null;
+            return (
+              <div style={{ marginBottom: 24 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: V.text, margin: "0 0 12px" }}>🔥 Quick Picks — Top Rated</h3>
+                <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
+                  {popular.map(p => {
+                    const v = p.variants[0];
+                    return (
+                      <div key={p.id} onClick={() => setViewProduct(p)} style={{ minWidth: 130, background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 12, padding: 12, textAlign: "center", cursor: "pointer", flexShrink: 0, position: "relative" }}>
+                        <span style={{ position: "absolute", top: 6, left: 6, fontSize: 9, fontWeight: 700, background: "#FF6B00", color: "#fff", padding: "2px 6px", borderRadius: 4 }}>🔥 Best Seller</span>
+                        <div style={{ fontSize: 32, marginBottom: 4, marginTop: 8 }}>{p.img}</div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: V.text, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: V.warning }}>{"⭐".repeat(Math.round(p.rating.avg))} ({p.rating.count})</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: V.primary }}>₦{v.price.toLocaleString()}</div>
+                        <button onClick={e => { e.stopPropagation(); onAddToCart(p.id, v.id); }} style={{ marginTop: 6, background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 8, padding: "5px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", width: "100%" }}>+ Add ₦{v.price.toLocaleString()}</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Sort Controls */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
             <p style={{ fontSize: 13, color: V.textMuted, margin: 0 }}>{filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}</p>
@@ -390,8 +444,11 @@ export function Shop({
                       <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 56 }}>{p.img}</div>
                     )}
                     <span style={{ position: "absolute", top: 8, right: 8, fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: variant.stock > 10 ? "var(--color-success-bg)" : variant.stock > 0 ? "var(--color-warning-bg)" : "var(--color-danger-bg)", color: variant.stock > 10 ? V.success : variant.stock > 0 ? V.warning : V.danger }}>
-                      {variant.stock > 10 ? "In Stock" : variant.stock > 0 ? `Only ${variant.stock}` : "Out of Stock"}
+                      {variant.stock > 10 ? "In Stock" : variant.stock > 0 ? `Only ${variant.stock} left!` : "Out of Stock"}
                     </span>
+                    {getProductRating(p.id).count >= 2 && getProductRating(p.id).avg >= 4 && (
+                      <span style={{ position: "absolute", bottom: 8, left: 8, fontSize: 9, fontWeight: 700, background: "#FF6B00", color: "#fff", padding: "3px 8px", borderRadius: 4 }}>🔥 Best Seller</span>
+                    )}
                     <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} style={{ position: "absolute", top: 8, left: 8, background: "rgba(255,255,255,0.85)", border: "none", borderRadius: "50%", width: 32, height: 32, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {wishlist.includes(p.id) ? "❤️" : "🤍"}
                     </button>
@@ -565,7 +622,7 @@ export function Shop({
                       fontWeight: 700, fontSize: 15, cursor: variant.stock === 0 ? "not-allowed" : "pointer",
                       boxShadow: variant.stock > 0 ? "0 2px 10px rgba(45,106,79,0.25)" : "none",
                     }}>
-                      {variant.stock === 0 ? "Sold Out" : inCart ? `✓ In Basket (${inCart.quantity})` : "🧺 Add to Basket"}
+                      {variant.stock === 0 ? "Sold Out" : inCart ? `✓ In Basket (${inCart.quantity})` : `🧺 Add — ₦${variant.price.toLocaleString()}`}
                     </button>
                   </div>
                 )}
@@ -574,6 +631,24 @@ export function Shop({
           </div>
         );
       })()}
+
+      {/* ===== CUSTOMER REVIEWS ===== */}
+      {topReviews && topReviews.length > 0 && selectedCategory === "all" && !searchQuery && (
+        <div style={{ marginTop: 32, marginBottom: 24 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: V.text, marginBottom: 16 }}>💬 What Customers Say</h3>
+          <div className="nb-reviews-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 14 }}>
+            {topReviews.slice(0, 4).map((r, i) => (
+              <div key={i} style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 14, padding: 16 }}>
+                <div style={{ display: "flex", gap: 1, marginBottom: 6 }}>
+                  {[1, 2, 3, 4, 5].map(s => <span key={s} style={{ fontSize: 14, color: s <= r.rating ? "#F5A623" : V.border }}>★</span>)}
+                </div>
+                <p style={{ fontSize: 13, color: V.text, margin: "0 0 8px", lineHeight: 1.5, fontStyle: "italic" }}>"{r.comment}"</p>
+                <div style={{ fontSize: 12, color: V.textMuted }}>— {r.userName} on <strong>{r.productName}</strong></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ===== FLOATING CART BAR ===== */}
       {cartCount > 0 && (

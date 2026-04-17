@@ -120,6 +120,10 @@ interface UserAccount {
   loyaltyPoints: number;
   referralCode: string;
   referredBy?: string;
+  avatar?: string; // emoji or URL
+  displayName?: string;
+  savedAddress?: string;
+  loyaltyTier?: "bronze" | "silver" | "gold";
 }
 
 // Review types
@@ -834,9 +838,17 @@ export default function App() {
   const [reviewModal, setReviewModal] = useState<{ productId: number; rating: number; comment: string } | null>(null);
 
   // Products state (mutable for admin management)
+  // Merge brands/imgUrl from INITIAL_PRODUCTS into saved data so localStorage doesn't lose them
   const [products, setProducts] = useState<Product[]>(() => {
-    try { const saved = localStorage.getItem("nb_products"); return saved ? JSON.parse(saved) : INITIAL_PRODUCTS; }
-    catch { return INITIAL_PRODUCTS; }
+    try {
+      const saved = localStorage.getItem("nb_products");
+      if (!saved) return INITIAL_PRODUCTS;
+      const parsed: Product[] = JSON.parse(saved);
+      return parsed.map(p => {
+        const initial = INITIAL_PRODUCTS.find(ip => ip.id === p.id);
+        return initial ? { ...p, brands: p.brands || initial.brands, imgUrl: p.imgUrl || initial.imgUrl } : p;
+      });
+    } catch { return INITIAL_PRODUCTS; }
   });
 
   // Flash deal
@@ -852,6 +864,13 @@ export default function App() {
 
   // Mobile menu
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Profile editing
+  const [profileEditing, setProfileEditing] = useState(false);
+  const [profileForm, setProfileForm] = useState({ displayName: "", avatar: "", savedAddress: "" });
+
+  // Welcome-back / abandoned cart
+  const [shownWelcomeBack, setShownWelcomeBack] = useState(false);
 
   // Admin product management
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
@@ -957,6 +976,33 @@ export default function App() {
     if (chatOpen && chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: "smooth" });
   }, [chatOpen, conversations]);
 
+  // Welcome-back / abandoned cart reminder
+  useEffect(() => {
+    if (shownWelcomeBack) return;
+    const timer = setTimeout(() => {
+      if (cart.length > 0 && page === "shop") {
+        showToast(`🧺 You have ${cart.length} item${cart.length > 1 ? "s" : ""} in your basket! Complete your order`, "info");
+      } else if (currentUser && page === "shop") {
+        showToast(`Welcome back, ${currentUser.displayName || currentUser.name?.split(" ")[0]}! 🎉`, "info");
+      }
+      setShownWelcomeBack(true);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Loyalty tier calculation
+  const getLoyaltyTier = (points: number): "bronze" | "silver" | "gold" => {
+    if (points >= 2000) return "gold";
+    if (points >= 500) return "silver";
+    return "bronze";
+  };
+  const loyaltyTier = getLoyaltyTier(userPoints);
+  const tierConfig = {
+    bronze: { name: "Bronze", icon: "🥉", color: "#CD7F32", next: 500, perk: "1x points" },
+    silver: { name: "Silver", icon: "🥈", color: "#C0C0C0", next: 2000, perk: "1.5x points" },
+    gold: { name: "Gold", icon: "🥇", color: "#FFD700", next: null, perk: "2x points + free delivery" },
+  };
+
   // ===== TOAST =====
   const showToast = useCallback((message: string, type: Toast["type"] = "success") => {
     setToasts(prev => [...prev, { id: Date.now(), message, type }]);
@@ -978,6 +1024,19 @@ export default function App() {
       localStorage.removeItem("nb_user_token");
     }
   }, [userToken]);
+
+  // Pre-fill checkout form from user profile
+  useEffect(() => {
+    if (currentUser) {
+      setForm(f => ({
+        ...f,
+        name: f.name || currentUser.displayName || currentUser.name || "",
+        phone: f.phone || currentUser.phone || "",
+        email: f.email || currentUser.email || "",
+        address: f.address || currentUser.savedAddress || "",
+      }));
+    }
+  }, [currentUser]);
 
   // ===== AUTH FUNCTIONS =====
   const resetAuthModal = () => {
@@ -1108,10 +1167,11 @@ export default function App() {
   // ===== LOYALTY POINTS =====
   const userPoints = currentUser?.loyaltyPoints || 0;
   const earnPointsFromOrder = (orderTotal: number) => {
-    const earned = Math.floor(orderTotal * POINTS_PER_NAIRA);
+    const tierMultiplier = loyaltyTier === "gold" ? 2 : loyaltyTier === "silver" ? 1.5 : 1;
+    const earned = Math.floor(orderTotal * POINTS_PER_NAIRA * tierMultiplier);
     if (currentUser) {
       setCurrentUser(prev => prev ? { ...prev, loyaltyPoints: (prev.loyaltyPoints || 0) + earned } : null);
-      showToast(`You earned ${earned} loyalty points! 🎉`, "success");
+      showToast(`You earned ${earned} loyalty points! ${tierMultiplier > 1 ? `(${tierMultiplier}x ${tierConfig[loyaltyTier].name} bonus)` : ""} 🎉`, "success");
     }
     return earned;
   };
@@ -1581,10 +1641,13 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                 <span style={{ fontSize: 12, fontWeight: 700, color: V.primary }}>{userPoints}</span>
                 <span style={{ fontSize: 10, color: V.textMuted }}>pts</span>
               </div>}
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 700 }}>{currentUser.name?.charAt(0).toUpperCase()}</div>
+              <div onClick={() => setPage("profile")} style={{ width: 32, height: 32, borderRadius: "50%", background: currentUser.avatar ? "none" : "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: currentUser.avatar ? 20 : 13, fontWeight: 700, cursor: "pointer", overflow: "hidden" }}>{currentUser.avatar || currentUser.name?.charAt(0).toUpperCase()}</div>
               <div style={{ fontSize: 12, lineHeight: 1.2 }}>
-                <div style={{ fontWeight: 600, color: V.text }}>{currentUser.name?.split(" ")[0]}</div>
-                <button onClick={handleUserLogout} style={{ background: "none", border: "none", fontSize: 10, color: V.textMuted, cursor: "pointer", padding: 0 }}>Sign out</button>
+                <div onClick={() => setPage("profile")} style={{ fontWeight: 600, color: V.text, cursor: "pointer" }}>{currentUser.displayName || currentUser.name?.split(" ")[0]}</div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <span style={{ fontSize: 10, color: tierConfig[loyaltyTier].color }}>{tierConfig[loyaltyTier].icon} {tierConfig[loyaltyTier].name}</span>
+                  <button onClick={handleUserLogout} style={{ background: "none", border: "none", fontSize: 10, color: V.textMuted, cursor: "pointer", padding: 0 }}>Sign out</button>
+                </div>
               </div>
             </div>
           ) : (
@@ -1613,10 +1676,13 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                   <span style={{ fontSize: 12, fontWeight: 700, color: V.primary }}>{userPoints}</span>
                   <span style={{ fontSize: 10, color: V.textMuted }}>pts</span>
                 </div>}
-                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 700 }}>{currentUser.name?.charAt(0).toUpperCase()}</div>
+                <div onClick={() => { setPage("profile"); setMobileMenuOpen(false); }} style={{ width: 32, height: 32, borderRadius: "50%", background: currentUser.avatar ? "none" : "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: currentUser.avatar ? 20 : 13, fontWeight: 700, cursor: "pointer", overflow: "hidden" }}>{currentUser.avatar || currentUser.name?.charAt(0).toUpperCase()}</div>
                 <div style={{ fontSize: 13, lineHeight: 1.2 }}>
-                  <div style={{ fontWeight: 600, color: V.text }}>{currentUser.name?.split(" ")[0]}</div>
-                  <button onClick={() => { handleUserLogout(); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", fontSize: 11, color: V.textMuted, cursor: "pointer", padding: 0 }}>Sign out</button>
+                  <div onClick={() => { setPage("profile"); setMobileMenuOpen(false); }} style={{ fontWeight: 600, color: V.text, cursor: "pointer" }}>{currentUser.displayName || currentUser.name?.split(" ")[0]}</div>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <span style={{ fontSize: 10, color: tierConfig[loyaltyTier].color }}>{tierConfig[loyaltyTier].icon} {tierConfig[loyaltyTier].name}</span>
+                    <button onClick={() => { handleUserLogout(); setMobileMenuOpen(false); }} style={{ background: "none", border: "none", fontSize: 11, color: V.textMuted, cursor: "pointer", padding: 0 }}>Sign out</button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -1663,6 +1729,8 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
           currentUser={currentUser}
           wishlist={wishlist}
           onToggleWishlist={(id) => { setWishlist(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]); showToast(wishlist.includes(id) ? "Removed from wishlist" : "Added to wishlist ❤️", "info"); }}
+          buyAgainProductIds={orders.flatMap(o => o.items.map(i => i.productId)).filter((v, i, a) => a.indexOf(v) === i)}
+          topReviews={reviews.filter(r => r.rating >= 4 && r.comment).slice(0, 4).map(r => ({ userName: r.userName, rating: r.rating, comment: r.comment, productName: products.find(p => p.id === r.productId)?.name || "Product" }))}
         />
       )}
 
@@ -1670,6 +1738,26 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
       {page === "cart" && (
         <div style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px" }}>
           <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20, color: V.text }}>🧺 Your Basket</h2>
+
+          {/* Order Progress Bar */}
+          {cart.length > 0 && (() => {
+            const MIN_ORDER = 5000;
+            const FREE_DELIVERY = 20000;
+            const progress = Math.min(100, (cartSubtotal / FREE_DELIVERY) * 100);
+            const hitMin = cartSubtotal >= MIN_ORDER;
+            const hitFree = cartSubtotal >= FREE_DELIVERY;
+            return (
+              <div style={{ background: V.bgSecondary, border: `1px solid ${V.border}`, borderRadius: 12, padding: 14, marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 6 }}>
+                  <span style={{ color: hitMin ? V.success : V.warning, fontWeight: 600 }}>{hitMin ? "✅ Min order met" : `₦${(MIN_ORDER - cartSubtotal).toLocaleString()} to min order`}</span>
+                  <span style={{ color: hitFree ? V.success : V.textMuted, fontWeight: 600 }}>{hitFree ? "🎉 Free delivery!" : `₦${(FREE_DELIVERY - cartSubtotal).toLocaleString()} to free delivery`}</span>
+                </div>
+                <div style={{ width: "100%", height: 8, background: V.border, borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ width: `${progress}%`, height: "100%", background: hitFree ? V.success : "var(--gradient-primary)", borderRadius: 4, transition: "width 0.5s" }} />
+                </div>
+              </div>
+            );
+          })()}
           {cart.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px", color: V.textMuted }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>🧺</div>
@@ -1805,6 +1893,20 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
               <button onClick={() => { setPage("shop"); setPlaced(null); }} style={{ flex: 1, background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px", fontWeight: 600, fontSize: 14, cursor: "pointer", minWidth: 100 }}>🛒 Shop More</button>
               <button onClick={() => setPage("orders")} style={{ flex: 1, background: V.bgCard, color: V.text, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px", fontWeight: 600, fontSize: 14, cursor: "pointer", minWidth: 100 }}>📦 Orders</button>
             </div>
+
+            {/* Post-Purchase Engagement */}
+            <div style={{ marginTop: 20, background: V.bg, borderRadius: 12, padding: 16, textAlign: "left" }}>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: V.text, marginBottom: 10 }}>🎉 Spread the word!</h4>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <a href={`https://wa.me/?text=${encodeURIComponent(`I just ordered foodstuffs from NaijaBasket! 🧺 Fresh market-price groceries delivered to your door. Check it out: https://json-rouge-seven.vercel.app`)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, background: "#25D366", color: "#fff", border: "none", borderRadius: 10, padding: "10px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer", textDecoration: "none", textAlign: "center", minWidth: 130 }}>📱 Share on WhatsApp</a>
+                {currentUser && placed.items.length > 0 && (
+                  <button onClick={() => setReviewModal({ productId: placed.items[0].productId, rating: 0, comment: "" })} style={{ flex: 1, background: "var(--bg-accent-subtle)", color: V.primary, border: `1px solid var(--border-accent)`, borderRadius: 10, padding: "10px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer", minWidth: 130 }}>⭐ Rate Your Items</button>
+                )}
+              </div>
+              {currentUser?.referralCode && (
+                <div style={{ marginTop: 10, fontSize: 12, color: V.textMuted }}>Your referral code: <strong style={{ color: V.primary }}>{currentUser.referralCode}</strong> — Share it to earn bonus points!</div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1835,6 +1937,110 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
             </div>
           </div>
           <button onClick={() => setPage("shop")} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 12, padding: "14px 28px", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>🛒 Start Shopping</button>
+        </div>
+      )}
+
+      {/* ===== PROFILE PAGE ===== */}
+      {page === "profile" && currentUser && (
+        <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 16px" }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 24 }}>👤 My Profile</h2>
+
+          {/* Avatar & Name Card */}
+          <div style={{ background: V.bgSecondary, border: `1px solid ${V.border}`, borderRadius: 16, padding: 24, marginBottom: 20, textAlign: "center" }}>
+            <div style={{ width: 80, height: 80, borderRadius: "50%", background: currentUser.avatar ? "none" : "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: currentUser.avatar ? 48 : 32, fontWeight: 700, margin: "0 auto 12px", overflow: "hidden" }}>
+              {currentUser.avatar || currentUser.name?.charAt(0).toUpperCase()}
+            </div>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: V.text }}>{currentUser.displayName || currentUser.name}</h3>
+            <p style={{ fontSize: 13, color: V.textMuted, marginTop: 4 }}>{currentUser.email}</p>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
+              <span style={{ background: tierConfig[loyaltyTier].color + "22", color: tierConfig[loyaltyTier].color, padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700 }}>{tierConfig[loyaltyTier].icon} {tierConfig[loyaltyTier].name} Member</span>
+              <span style={{ background: "var(--bg-accent-subtle)", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, color: V.primary }}>⭐ {userPoints} pts</span>
+            </div>
+            {tierConfig[loyaltyTier].next && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 11, color: V.textMuted, marginBottom: 4 }}>{tierConfig[loyaltyTier].next! - userPoints} pts to {loyaltyTier === "bronze" ? "Silver" : "Gold"}</div>
+                <div style={{ width: "100%", height: 6, background: V.border, borderRadius: 3 }}>
+                  <div style={{ width: `${Math.min(100, (userPoints / tierConfig[loyaltyTier].next!) * 100)}%`, height: "100%", background: tierConfig[loyaltyTier].color, borderRadius: 3, transition: "width 0.5s" }} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Edit Profile Form */}
+          {profileEditing ? (
+            <div style={{ background: V.bgSecondary, border: `1px solid ${V.border}`, borderRadius: 16, padding: 24, marginBottom: 20 }}>
+              <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: V.text }}>Edit Profile</h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: V.text }}>Display Name
+                  <input value={profileForm.displayName} onChange={e => setProfileForm(f => ({ ...f, displayName: e.target.value }))} placeholder={currentUser.name || "Your name"} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1px solid ${V.border}`, background: V.bg, color: V.text, fontSize: 14, marginTop: 4, boxSizing: "border-box" }} />
+                </label>
+                <label style={{ fontSize: 13, fontWeight: 600, color: V.text }}>Avatar (pick an emoji)
+                  <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                    {["😊", "😎", "🤑", "💪", "🛒", "🍚", "🌶️", "🥑", "👨‍🍳", "👩‍🍳", "🧑‍💼", "🦁"].map(em => (
+                      <button key={em} onClick={() => setProfileForm(f => ({ ...f, avatar: em }))} style={{ width: 40, height: 40, borderRadius: 10, border: profileForm.avatar === em ? `2px solid ${V.primary}` : `1px solid ${V.border}`, background: profileForm.avatar === em ? "var(--bg-accent-subtle)" : V.bg, cursor: "pointer", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>{em}</button>
+                    ))}
+                  </div>
+                </label>
+                <label style={{ fontSize: 13, fontWeight: 600, color: V.text }}>Delivery Address
+                  <textarea value={profileForm.savedAddress} onChange={e => setProfileForm(f => ({ ...f, savedAddress: e.target.value }))} placeholder="Your default delivery address" rows={3} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1px solid ${V.border}`, background: V.bg, color: V.text, fontSize: 14, marginTop: 4, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+                </label>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => {
+                    setCurrentUser(prev => prev ? { ...prev, displayName: profileForm.displayName || prev.displayName, avatar: profileForm.avatar || prev.avatar, savedAddress: profileForm.savedAddress || prev.savedAddress } : null);
+                    setProfileEditing(false);
+                    showToast("Profile updated! ✅", "success");
+                  }} style={{ flex: 1, background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>Save Changes</button>
+                  <button onClick={() => setProfileEditing(false)} style={{ flex: 1, background: V.bg, color: V.text, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px", fontWeight: 600, cursor: "pointer", fontSize: 14 }}>Cancel</button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => { setProfileEditing(true); setProfileForm({ displayName: currentUser.displayName || currentUser.name || "", avatar: currentUser.avatar || "", savedAddress: currentUser.savedAddress || "" }); }} style={{ width: "100%", background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, cursor: "pointer", fontSize: 15, marginBottom: 20 }}>✏️ Edit Profile</button>
+          )}
+
+          {/* Stats Cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+            <div style={{ background: V.bgSecondary, border: `1px solid ${V.border}`, borderRadius: 12, padding: 16, textAlign: "center" }}>
+              <div style={{ fontSize: 24, marginBottom: 4 }}>📦</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: V.text }}>{orders.length}</div>
+              <div style={{ fontSize: 12, color: V.textMuted }}>Total Orders</div>
+            </div>
+            <div style={{ background: V.bgSecondary, border: `1px solid ${V.border}`, borderRadius: 12, padding: 16, textAlign: "center" }}>
+              <div style={{ fontSize: 24, marginBottom: 4 }}>⭐</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: V.text }}>{userPoints}</div>
+              <div style={{ fontSize: 12, color: V.textMuted }}>Loyalty Points</div>
+            </div>
+            <div style={{ background: V.bgSecondary, border: `1px solid ${V.border}`, borderRadius: 12, padding: 16, textAlign: "center" }}>
+              <div style={{ fontSize: 24, marginBottom: 4 }}>💬</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: V.text }}>{reviews.filter(r => r.userId === currentUser.id).length}</div>
+              <div style={{ fontSize: 12, color: V.textMuted }}>Reviews Given</div>
+            </div>
+            <div style={{ background: V.bgSecondary, border: `1px solid ${V.border}`, borderRadius: 12, padding: 16, textAlign: "center" }}>
+              <div style={{ fontSize: 24, marginBottom: 4 }}>🎁</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: V.text }}>{currentUser.referralCode}</div>
+              <div style={{ fontSize: 12, color: V.textMuted }}>Referral Code</div>
+            </div>
+          </div>
+
+          {/* Account Info */}
+          <div style={{ background: V.bgSecondary, border: `1px solid ${V.border}`, borderRadius: 16, padding: 24, marginBottom: 20 }}>
+            <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: V.text }}>Account Details</h4>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}><span style={{ color: V.textMuted }}>Email</span><span style={{ color: V.text, fontWeight: 500 }}>{currentUser.email} {currentUser.emailVerified ? "✅" : "❌"}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}><span style={{ color: V.textMuted }}>Phone</span><span style={{ color: V.text, fontWeight: 500 }}>{currentUser.phone} {currentUser.phoneVerified ? "✅" : "❌"}</span></div>
+              {currentUser.savedAddress && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}><span style={{ color: V.textMuted }}>Address</span><span style={{ color: V.text, fontWeight: 500, textAlign: "right", maxWidth: "60%" }}>{currentUser.savedAddress}</span></div>}
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}><span style={{ color: V.textMuted }}>Tier</span><span style={{ color: tierConfig[loyaltyTier].color, fontWeight: 700 }}>{tierConfig[loyaltyTier].icon} {tierConfig[loyaltyTier].name} — {tierConfig[loyaltyTier].perk}</span></div>
+            </div>
+          </div>
+
+          <button onClick={() => setPage("shop")} style={{ width: "100%", background: V.bg, color: V.text, border: `1px solid ${V.border}`, borderRadius: 12, padding: "14px", fontWeight: 600, cursor: "pointer", fontSize: 15 }}>← Back to Shop</button>
+        </div>
+      )}
+      {page === "profile" && !currentUser && (
+        <div style={{ maxWidth: 500, margin: "0 auto", padding: "60px 16px", textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>👤</div>
+          <p style={{ fontSize: 16, color: V.textMuted, marginBottom: 16 }}>Sign in to view your profile</p>
+          <button onClick={() => { setShowAuthModal(true); setAuthStep("choose"); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 600, cursor: "pointer" }}>Sign In / Sign Up</button>
         </div>
       )}
 
@@ -2144,6 +2350,13 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                     <input value={newProduct.brands} onChange={e => setNewProduct(f => ({ ...f, brands: e.target.value }))} placeholder="e.g. Mama Gold, Royal Stallion, Caprice" style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "10px 12px", color: V.text, fontSize: 14, outline: "none" }} />
                   </div>
                   <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 12, color: V.textMuted, display: "block", marginBottom: 4 }}>Image URL <span style={{ color: V.textMuted }}>(optional — paste a link to a product photo)</span></label>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input value={(newProduct as any).imgUrl || ""} onChange={e => setNewProduct(f => ({ ...f, imgUrl: e.target.value } as any))} placeholder="https://example.com/product.jpg" style={{ flex: 1, background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "10px 12px", color: V.text, fontSize: 14, outline: "none" }} />
+                      {(newProduct as any).imgUrl && <img src={(newProduct as any).imgUrl} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover", border: `1px solid ${V.border}` }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
                     <label style={{ fontSize: 12, color: V.textMuted, display: "block", marginBottom: 8 }}>Variants (sizes & pricing)</label>
                     {newProduct.variants.map((v, idx) => (
                       <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center", flexWrap: "wrap" as const }}>
@@ -2179,6 +2392,7 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                       })),
                       inStock: true,
                       ...(newProduct.brands.trim() ? { brands: newProduct.brands.split(",").map(b => b.trim()).filter(Boolean) } : {}),
+                      ...((newProduct as any).imgUrl?.trim() ? { imgUrl: (newProduct as any).imgUrl.trim() } : {}),
                     };
                     setProducts(prev => [...prev, product]);
                     setShowAddProduct(false);
@@ -2211,6 +2425,21 @@ ${order.paymentRef ? `Reference: ${order.paymentRef}` : ""}${order.txHash ? `Tx 
                         </div>
                       </div>
                       <div style={{ fontSize: 12, color: V.textMuted, marginBottom: 10 }}>{p.desc}</div>
+                      
+                      {/* Image URL editing */}
+                      {isEditing && (
+                        <div style={{ marginBottom: 10 }}>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: V.textMuted }}>Product Image URL</label>
+                          <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
+                            <input type="url" defaultValue={p.imgUrl || ""} placeholder="https://example.com/image.jpg" onBlur={e => {
+                              const url = e.target.value.trim();
+                              setProducts(prev => prev.map(pr => pr.id === p.id ? { ...pr, imgUrl: url || undefined } : pr));
+                              if (url) showToast(`Image updated for ${p.name}`, "success");
+                            }} style={{ flex: 1, background: V.bg, border: `1px solid ${V.primary}`, borderRadius: 6, padding: "6px 10px", color: V.text, fontSize: 12, outline: "none" }} />
+                            {p.imgUrl && <img src={p.imgUrl} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: "cover", border: `1px solid ${V.border}` }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                          </div>
+                        </div>
+                      )}
                       
                       {/* Variants with price editing */}
                       {p.variants.map(v => (
