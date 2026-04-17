@@ -304,6 +304,57 @@ app.post('/api/auth/google', (req, res) => {
   });
 });
 
+// ======== CUSTOMER LOGIN BY EMAIL (OTP-based) ========
+app.post('/api/auth/customer-login', (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required.' });
+  const user = users[email.toLowerCase().trim()];
+  if (!user) return res.status(404).json({ success: false, error: 'No account found.' });
+  const token = 'nb-user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+  res.json({ success: true, user, token });
+});
+
+// ======== USER PROFILE UPDATE ========
+app.patch('/api/users/:id', (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  // Find user by id across all keys
+  const key = Object.keys(users).find(k => users[k]?.id === id);
+  if (!key) return res.status(404).json({ error: 'User not found.' });
+  Object.assign(users[key], updates);
+  res.json({ success: true, user: users[key] });
+});
+
+// ======== REVIEWS ========
+const reviewsStore = [];
+
+app.get('/api/reviews', (req, res) => {
+  res.json({ success: true, reviews: reviewsStore });
+});
+
+app.post('/api/reviews', (req, res) => {
+  const review = req.body;
+  if (!review || !review.productId) return res.status(400).json({ error: 'Review data required.' });
+  review.id = review.id || `rev_${Date.now()}`;
+  review.date = review.date || new Date().toISOString().slice(0, 10);
+  reviewsStore.push(review);
+  res.json({ success: true, review });
+});
+
+// ======== DELIVERY ZONES ========
+let deliveryZonesStore = [];
+
+app.get('/api/delivery-zones', (req, res) => {
+  res.json({ success: true, zones: deliveryZonesStore });
+});
+
+app.put('/api/delivery-zones', (req, res) => {
+  const { zones } = req.body;
+  if (!Array.isArray(zones)) return res.status(400).json({ error: 'zones array required.' });
+  deliveryZonesStore = zones;
+  res.json({ success: true, zones: deliveryZonesStore });
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`✅ Mock API Server running at http://localhost:${PORT}`);

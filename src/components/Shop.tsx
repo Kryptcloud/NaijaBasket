@@ -551,7 +551,7 @@ export function Shop({
             { icon: "🔒", title: "Secure Pay", desc: "Paystack & crypto accepted" },
             { icon: "🚚", title: "Fast Delivery", desc: "Next-day within Aba" },
             { icon: "💬", title: "WhatsApp Support", desc: "Quick order via chat" },
-            { icon: "⚡", title: "Same-Day Option", desc: "Express delivery available" },
+            { icon: "📍", title: "Pickup Stations", desc: "Collect from nearby stations" },
           ].map((t, i) => (
             <div key={i}>
               <div style={{ fontSize: 28 }}>{t.icon}</div>

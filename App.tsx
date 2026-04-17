@@ -7,9 +7,10 @@ const API_BASE = localStorage.getItem("nb_api_url") || "https://naijabasket.onre
 async function apiFetch(path: string, opts: RequestInit = {}) {
   if (!API_BASE) return null;
   try {
+    const token = localStorage.getItem("nb_user_token");
     const res = await fetch(`${API_BASE}${path}`, {
       ...opts,
-      headers: { "Content-Type": "application/json", ...opts.headers },
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...opts.headers },
     });
     if (!res.ok) return null;
     return await res.json();
@@ -159,6 +160,9 @@ interface UserAccount {
   avatar?: string; // emoji or URL
   displayName?: string;
   savedAddress?: string;
+  savedState?: string;
+  savedCity?: string;
+  savedLGA?: string;
   loyaltyTier?: "bronze" | "silver" | "gold";
 }
 
@@ -997,7 +1001,7 @@ export default function App() {
 
   // Profile editing
   const [profileEditing, setProfileEditing] = useState(false);
-  const [profileForm, setProfileForm] = useState({ displayName: "", avatar: "", savedAddress: "" });
+  const [profileForm, setProfileForm] = useState({ displayName: "", avatar: "", savedAddress: "", savedState: "", savedCity: "", savedLGA: "" });
 
   // Welcome-back / abandoned cart
   const [shownWelcomeBack, setShownWelcomeBack] = useState(false);
@@ -1005,7 +1009,7 @@ export default function App() {
   // Admin product management
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: "", category: "grains", desc: "", brands: "", variants: [{ size: "", unit: "", price: "", stock: "" }] });
+  const [newProduct, setNewProduct] = useState({ name: "", category: "grains", desc: "", brands: "", imgUrl: "", variants: [{ size: "", unit: "", price: "", stock: "" }] });
 
   // Product helper wrappers
   const getProduct = (id: number) => getProductFrom(products, id);
@@ -1161,8 +1165,23 @@ export default function App() {
     return () => clearInterval(interval);
   }, [paymentScreen, timer]);
 
-  // Reviews persistence
+  // Reviews persistence + API sync
   useEffect(() => { localStorage.setItem("nb_reviews", JSON.stringify(reviews)); }, [reviews]);
+  useEffect(() => {
+    if (!API_BASE) return;
+    (async () => {
+      const data = await apiFetch("/api/reviews");
+      if (data?.success && Array.isArray(data.reviews) && data.reviews.length > 0) {
+        setReviews(prev => {
+          const merged = [...prev];
+          for (const r of data.reviews) {
+            if (!merged.some(lr => lr.id === r.id)) merged.push(r);
+          }
+          return merged;
+        });
+      }
+    })();
+  }, []);
 
   // Flash deal countdown
   useEffect(() => {
@@ -1226,6 +1245,13 @@ export default function App() {
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem("nb_user", JSON.stringify(currentUser));
+      // Also update local registry
+      const registry: UserAccount[] = JSON.parse(localStorage.getItem("nb_registered_users") || "[]");
+      const idx = registry.findIndex(u => u.email.toLowerCase() === currentUser.email.toLowerCase());
+      if (idx >= 0) registry[idx] = currentUser; else registry.push(currentUser);
+      localStorage.setItem("nb_registered_users", JSON.stringify(registry));
+      // Sync to backend
+      if (currentUser.id) apiFetch(`/api/users/${currentUser.id}`, { method: "PATCH", body: JSON.stringify(currentUser) });
     } else {
       localStorage.removeItem("nb_user");
     }
@@ -1248,6 +1274,9 @@ export default function App() {
         phone: f.phone || currentUser.phone || "",
         email: f.email || currentUser.email || "",
         address: f.address || currentUser.savedAddress || "",
+        state: f.state || currentUser.savedState || "",
+        city: f.city || currentUser.savedCity || "",
+        lga: f.lga || currentUser.savedLGA || "",
       }));
     }
   }, [currentUser]);
@@ -1273,11 +1302,28 @@ export default function App() {
     setAuthError("");
     if (!loginEmail) { setAuthError("Please enter your email address."); return; }
     setAuthLoading(true);
+    // Try backend first, fall back to local registry
+    const apiResult = await apiFetch("/api/auth/customer-login", { method: "POST", body: JSON.stringify({ email: loginEmail.trim() }) });
+    if (apiResult?.success && apiResult.user) {
+      const u = apiResult.user;
+      const found: UserAccount = { id: u.id, name: u.name, email: u.email, phone: u.phone || "", emailVerified: u.emailVerified ?? true, phoneVerified: u.phoneVerified ?? !!u.phone, loyaltyPoints: u.loyaltyPoints || 0, referralCode: u.referralCode || generateReferralCode(u.name) };
+      setCurrentUser(found);
+      const token = apiResult.token || `tok_${Date.now()}`;
+      setUserToken(token);
+      localStorage.setItem("nb_user_token", token);
+      await sendOtp("email", found.email);
+      setAuthStep("otp-email");
+      setAuthLoading(false);
+      return;
+    }
+    // Fallback to local registry
     const registry: UserAccount[] = JSON.parse(localStorage.getItem("nb_registered_users") || "[]");
     const found = registry.find(u => u.email.toLowerCase() === loginEmail.toLowerCase().trim());
     if (!found) { setAuthError("No account found with that email. Please sign up."); setAuthLoading(false); return; }
     setCurrentUser(found);
-    setUserToken(`tok_${Date.now()}`);
+    const token = `tok_${Date.now()}`;
+    setUserToken(token);
+    localStorage.setItem("nb_user_token", token);
     await sendOtp("email", found.email);
     setAuthStep("otp-email");
     setAuthLoading(false);
@@ -1293,8 +1339,13 @@ export default function App() {
       setAuthError("An account with this email already exists. Please log in instead."); setAuthLoading(false); return;
     }
     const user = { id: `u_${Date.now()}`, name: signupForm.name, email: signupForm.email, phone: signupForm.phone };
-    setCurrentUser({ ...user, emailVerified: false, phoneVerified: false, loyaltyPoints: 0, referralCode: generateReferralCode(signupForm.name) });
-    setUserToken(`tok_${Date.now()}`);
+    const newUser: UserAccount = { ...user, emailVerified: false, phoneVerified: false, loyaltyPoints: 0, referralCode: generateReferralCode(signupForm.name) };
+    setCurrentUser(newUser);
+    const token = `tok_${Date.now()}`;
+    setUserToken(token);
+    localStorage.setItem("nb_user_token", token);
+    // Sync to backend API
+    apiFetch("/api/auth/signup", { method: "POST", body: JSON.stringify({ name: signupForm.name, email: signupForm.email, phone: signupForm.phone }) });
     await sendOtp("email", signupForm.email);
     setAuthStep("otp-email");
     setAuthLoading(false);
@@ -1467,6 +1518,8 @@ export default function App() {
     setReviews(prev => [review, ...prev]);
     setReviewModal(null);
     showToast("Review submitted! Thank you ⭐", "success");
+    // Sync to backend
+    apiFetch("/api/reviews", { method: "POST", body: JSON.stringify(review) });
   };
 
   // ===== LOYALTY POINTS =====
@@ -2940,11 +2993,25 @@ export default function App() {
                   </div>
                 </label>
                 <label style={{ fontSize: 13, fontWeight: 600, color: V.text }}>Delivery Address
-                  <textarea value={profileForm.savedAddress} onChange={e => setProfileForm(f => ({ ...f, savedAddress: e.target.value }))} placeholder="Your default delivery address" rows={3} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1px solid ${V.border}`, background: V.bg, color: V.text, fontSize: 14, marginTop: 4, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 8, marginBottom: 8 }}>
+                    <select value={profileForm.savedState} onChange={e => setProfileForm(f => ({ ...f, savedState: e.target.value, savedCity: "", savedLGA: "" }))} style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "8px 10px", color: V.text, fontSize: 13 }}>
+                      <option value="">State</option>
+                      {deliveryZones.filter(z => z.enabled).map(z => <option key={z.id} value={z.state}>{z.state}</option>)}
+                    </select>
+                    <select value={profileForm.savedCity} onChange={e => setProfileForm(f => ({ ...f, savedCity: e.target.value, savedLGA: "" }))} disabled={!profileForm.savedState} style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "8px 10px", color: profileForm.savedState ? V.text : V.textMuted, fontSize: 13, opacity: profileForm.savedState ? 1 : 0.6 }}>
+                      <option value="">City</option>
+                      {deliveryZones.find(z => z.state === profileForm.savedState)?.cities.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                    </select>
+                    <select value={profileForm.savedLGA} onChange={e => setProfileForm(f => ({ ...f, savedLGA: e.target.value }))} disabled={!profileForm.savedCity} style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "8px 10px", color: profileForm.savedCity ? V.text : V.textMuted, fontSize: 13, opacity: profileForm.savedCity ? 1 : 0.6 }}>
+                      <option value="">LGA</option>
+                      {deliveryZones.find(z => z.state === profileForm.savedState)?.cities.find(c => c.name === profileForm.savedCity)?.lgas.map(l => <option key={l.name} value={l.name}>{l.name}</option>)}
+                    </select>
+                  </div>
+                  <input value={profileForm.savedAddress} onChange={e => setProfileForm(f => ({ ...f, savedAddress: e.target.value }))} placeholder="Street address (e.g. 12 Faulks Road)" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1px solid ${V.border}`, background: V.bg, color: V.text, fontSize: 14, marginTop: 4, fontFamily: "inherit", boxSizing: "border-box" as const }} />
                 </label>
                 <div style={{ display: "flex", gap: 10 }}>
                   <button onClick={() => {
-                    setCurrentUser(prev => prev ? { ...prev, displayName: profileForm.displayName || prev.displayName, avatar: profileForm.avatar || prev.avatar, savedAddress: profileForm.savedAddress || prev.savedAddress } : null);
+                    setCurrentUser(prev => prev ? { ...prev, displayName: profileForm.displayName || prev.displayName, avatar: profileForm.avatar || prev.avatar, savedAddress: profileForm.savedAddress || prev.savedAddress, savedState: profileForm.savedState || prev.savedState, savedCity: profileForm.savedCity || prev.savedCity, savedLGA: profileForm.savedLGA || prev.savedLGA } : null);
                     setProfileEditing(false);
                     showToast("Profile updated! ✅", "success");
                   }} style={{ flex: 1, background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>Save Changes</button>
@@ -2953,7 +3020,7 @@ export default function App() {
               </div>
             </div>
           ) : (
-            <button onClick={() => { setProfileEditing(true); setProfileForm({ displayName: currentUser.displayName || currentUser.name || "", avatar: currentUser.avatar || "", savedAddress: currentUser.savedAddress || "" }); }} style={{ width: "100%", background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, cursor: "pointer", fontSize: 15, marginBottom: 20 }}>✏️ Edit Profile</button>
+            <button onClick={() => { setProfileEditing(true); setProfileForm({ displayName: currentUser.displayName || currentUser.name || "", avatar: currentUser.avatar || "", savedAddress: currentUser.savedAddress || "", savedState: currentUser.savedState || "", savedCity: currentUser.savedCity || "", savedLGA: currentUser.savedLGA || "" }); }} style={{ width: "100%", background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, cursor: "pointer", fontSize: 15, marginBottom: 20 }}>✏️ Edit Profile</button>
           )}
 
           {/* Stats Cards */}
@@ -3273,7 +3340,7 @@ export default function App() {
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap" as const, gap: 12 }}>
                 <h3 style={{ fontSize: 18, fontWeight: 700, color: V.primary, margin: 0 }}>📦 Product & Inventory Management</h3>
-                <button onClick={() => { setShowAddProduct(true); setNewProduct({ name: "", category: "grains", desc: "", brands: "", variants: [{ size: "", unit: "", price: "", stock: "" }] }); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>+ Add New Product</button>
+                <button onClick={() => { setShowAddProduct(true); setNewProduct({ name: "", category: "grains", desc: "", brands: "", imgUrl: "", variants: [{ size: "", unit: "", price: "", stock: "" }] }); }} style={{ background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>+ Add New Product</button>
               </div>
 
               {/* Add Product Form */}
@@ -3308,10 +3375,48 @@ export default function App() {
                     <input value={newProduct.brands} onChange={e => setNewProduct(f => ({ ...f, brands: e.target.value }))} placeholder="e.g. Mama Gold, Royal Stallion, Caprice" style={{ width: "100%", background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "10px 12px", color: V.text, fontSize: 14, outline: "none" }} />
                   </div>
                   <div style={{ marginBottom: 12 }}>
-                    <label style={{ fontSize: 12, color: V.textMuted, display: "block", marginBottom: 4 }}>Image URL <span style={{ color: V.textMuted }}>(optional — paste a link to a product photo)</span></label>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <input value={(newProduct as any).imgUrl || ""} onChange={e => setNewProduct(f => ({ ...f, imgUrl: e.target.value } as any))} placeholder="https://example.com/product.jpg" style={{ flex: 1, background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "10px 12px", color: V.text, fontSize: 14, outline: "none" }} />
-                      {(newProduct as any).imgUrl && <img src={(newProduct as any).imgUrl} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover", border: `1px solid ${V.border}` }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                    <label style={{ fontSize: 12, color: V.textMuted, display: "block", marginBottom: 4 }}>Product Image <span style={{ color: V.textMuted }}>(optional)</span></label>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                      {newProduct.imgUrl ? (
+                        <img src={newProduct.imgUrl} alt="" style={{ width: 64, height: 64, borderRadius: 10, objectFit: "cover", border: `2px solid ${V.primary}` }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                      ) : (
+                        <div style={{ width: 64, height: 64, borderRadius: 10, background: V.bg, border: `2px dashed ${V.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>{newProduct.name ? autoIcon(newProduct.name, newProduct.category) : "📦"}</div>
+                      )}
+                      <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, flex: 1, minWidth: 160 }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--gradient-primary)", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", justifyContent: "center" }}>
+                          📷 Upload Photo
+                          <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            if (file.size > 2 * 1024 * 1024) { showToast("Image must be under 2MB", "error"); return; }
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              const img = new Image();
+                              img.onload = () => {
+                                const canvas = document.createElement("canvas");
+                                const MAX = 400;
+                                let w = img.width, h = img.height;
+                                if (w > MAX || h > MAX) {
+                                  if (w > h) { h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; }
+                                }
+                                canvas.width = w; canvas.height = h;
+                                canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+                                const dataUrl = canvas.toDataURL("image/webp", 0.8);
+                                setNewProduct(f => ({ ...f, imgUrl: dataUrl }));
+                                showToast("Image uploaded!", "success");
+                              };
+                              img.src = reader.result as string;
+                            };
+                            reader.readAsDataURL(file);
+                            e.target.value = "";
+                          }} />
+                        </label>
+                        {newProduct.imgUrl && (
+                          <button onClick={() => setNewProduct(f => ({ ...f, imgUrl: "" }))} style={{ background: "none", border: `1px solid ${V.danger}`, borderRadius: 8, padding: "6px 12px", fontSize: 11, color: V.danger, cursor: "pointer", fontWeight: 600 }}>
+                            🗑️ Remove Image
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div style={{ marginBottom: 12 }}>
@@ -3350,7 +3455,7 @@ export default function App() {
                       })),
                       inStock: true,
                       ...(newProduct.brands.trim() ? { brands: newProduct.brands.split(",").map(b => b.trim()).filter(Boolean) } : {}),
-                      ...((newProduct as any).imgUrl?.trim() ? { imgUrl: (newProduct as any).imgUrl.trim() } : {}),
+                      ...(newProduct.imgUrl ? { imgUrl: newProduct.imgUrl } : {}),
                     };
                     setProducts(prev => [...prev, product]);
                     setShowAddProduct(false);
@@ -3808,7 +3913,7 @@ export default function App() {
                 <button onClick={() => setDeliveryZones(prev => [...prev, { id: `zone_${Date.now()}`, state: "", enabled: true, cities: [{ name: "", lgas: [{ name: "", homeFee: 2500, pickupFee: 1500, pickupStations: [""] }] }] }])} style={{ background: "var(--bg-accent-subtle)", color: V.primary, border: `1px dashed ${V.primary}`, borderRadius: 10, padding: "10px 18px", fontSize: 13, cursor: "pointer", fontWeight: 600, width: "100%", marginBottom: 12 }}>+ Add New State Zone</button>
 
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button onClick={() => { localStorage.setItem("nb_delivery_zones", JSON.stringify(deliveryZones)); showToast("Delivery zones saved!", "success"); }} style={{ flex: 1, background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>💾 Save All Zones</button>
+                  <button onClick={() => { localStorage.setItem("nb_delivery_zones", JSON.stringify(deliveryZones)); apiFetch("/api/delivery-zones", { method: "PUT", body: JSON.stringify({ zones: deliveryZones }) }); showToast("Delivery zones saved!", "success"); }} style={{ flex: 1, background: "var(--gradient-primary)", color: "#fff", border: "none", borderRadius: 10, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>💾 Save All Zones</button>
                   <button onClick={() => { setDeliveryZones(DEFAULT_DELIVERY_ZONES); localStorage.removeItem("nb_delivery_zones"); showToast("Zones reset to defaults", "info"); }} style={{ background: V.bgSecondary, color: V.textMuted, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px 16px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>↩ Reset</button>
                 </div>
               </div>
