@@ -2805,6 +2805,7 @@ export default function App() {
               <a onClick={() => setPage("cart")} style={{ color: V.textMuted, textDecoration: "none", cursor: "pointer" }}>🧺 Cart</a>
               <a onClick={() => setPage("orders")} style={{ color: V.textMuted, textDecoration: "none", cursor: "pointer" }}>📦 My Orders</a>
               <a onClick={() => setPage("about")} style={{ color: V.textMuted, textDecoration: "none", cursor: "pointer" }}>ℹ️ About Us</a>
+              <a onClick={() => setPage("admin-login")} style={{ color: V.textMuted, textDecoration: "none", cursor: "pointer" }}>🔐 Admin</a>
             </div>
           </div>
           {/* Contact */}
