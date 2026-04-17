@@ -2853,13 +2853,13 @@ export default function App() {
           </div>
         </div>
         <div style={{ textAlign: "center", paddingTop: 20, borderTop: `1px solid ${V.border}` }}>
-          <p style={{ margin: 0, cursor: "default", userSelect: "none" }} onClick={() => {
+          <p style={{ margin: 0, cursor: "default", WebkitUserSelect: "none", userSelect: "none", WebkitTapHighlightColor: "transparent" }} onPointerDown={(e) => {
+            e.preventDefault();
+            const w = window as any;
             const now = Date.now();
-            const key = "nb_admin_clicks";
-            const prev = JSON.parse(sessionStorage.getItem(key) || "[]") as number[];
-            const recent = [...prev.filter(t => now - t < 1500), now];
-            sessionStorage.setItem(key, JSON.stringify(recent));
-            if (recent.length >= 3) { sessionStorage.removeItem(key); setPage("admin-login"); }
+            if (!w._nbClicks) w._nbClicks = [];
+            w._nbClicks = [...(w._nbClicks as number[]).filter((t: number) => now - t < 2000), now];
+            if (w._nbClicks.length >= 3) { w._nbClicks = []; setPage("admin-login"); }
           }}>© {new Date().getFullYear()} NaijaBasket. All rights reserved.</p>
         </div>
       </footer>
