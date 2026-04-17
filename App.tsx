@@ -1659,11 +1659,16 @@ export default function App() {
   const BSC_USDT = "0x55d398326f99059fF775485246999027B3197955";
   const NGN_USD_RATE = ngnUsdRate;
 
-  // Generate QR code data URL
+  // Generate QR code data URL using qrcode-generator
   const generateQr = async (text: string) => {
     try {
-      const QRCode = (window as any).QRCode;
-      if (QRCode) { const url = await QRCode.toDataURL(text, { width: 220, margin: 2, color: { dark: "#000", light: "#fff" } }); setCryptoQrDataUrl(url); }
+      const qrFactory = (window as any).qrcode;
+      if (qrFactory) {
+        const qr = qrFactory(0, "M");
+        qr.addData(text);
+        qr.make();
+        setCryptoQrDataUrl(qr.createDataURL(6, 4));
+      }
     } catch { setCryptoQrDataUrl(""); }
   };
 
@@ -1671,28 +1676,27 @@ export default function App() {
   const getCryptoAmount = (totalNgn: number, token: string) => {
     const usd = totalNgn / NGN_USD_RATE;
     switch (token) {
-      case "USDT": return { amount: usd.toFixed(2), symbol: "USDT", usd };
-      case "BNB": return { amount: (livePrices.bnb > 0 ? usd / livePrices.bnb : 0).toFixed(6), symbol: "BNB", usd };
-      case "SOL": return { amount: (livePrices.sol > 0 ? usd / livePrices.sol : 0).toFixed(6), symbol: "SOL", usd };
-      case "BTC": return { amount: (livePrices.btc > 0 ? usd / livePrices.btc : 0).toFixed(8), symbol: "BTC", usd };
-      case "XRP": return { amount: (livePrices.xrp > 0 ? usd / livePrices.xrp : 0).toFixed(4), symbol: "XRP", usd };
-      default: return { amount: usd.toFixed(2), symbol: token, usd };
+      case "USDT": return { amount: usd.toFixed(2), symbol: "USDT", usd, price: livePrices.usdt, priceLoaded: true };
+      case "BNB": return { amount: livePrices.bnb > 0 ? (usd / livePrices.bnb).toFixed(6) : "\u2014", symbol: "BNB", usd, price: livePrices.bnb, priceLoaded: livePrices.bnb > 0 };
+      case "SOL": return { amount: livePrices.sol > 0 ? (usd / livePrices.sol).toFixed(6) : "\u2014", symbol: "SOL", usd, price: livePrices.sol, priceLoaded: livePrices.sol > 0 };
+      case "BTC": return { amount: livePrices.btc > 0 ? (usd / livePrices.btc).toFixed(8) : "\u2014", symbol: "BTC", usd, price: livePrices.btc, priceLoaded: livePrices.btc > 0 };
+      case "XRP": return { amount: livePrices.xrp > 0 ? (usd / livePrices.xrp).toFixed(4) : "\u2014", symbol: "XRP", usd, price: livePrices.xrp, priceLoaded: livePrices.xrp > 0 };
+      default: return { amount: usd.toFixed(2), symbol: token, usd, price: 0, priceLoaded: false };
     }
   };
 
-  // BSC payment (USDT / BNB) — wallet connect
+  // BSC payment (USDT / BNB) — wallet connect (optional fast path from waiting state)
   async function connectWalletAndPay() {
     if (!paymentScreen) return;
     const ethersLib = (window as any).ethers;
     const ethereum = (window as any).ethereum;
 
     if (!ethereum) {
-      setCryptoPayError("No crypto wallet detected. Please install MetaMask or Trust Wallet.");
-      setCryptoPayStatus("error");
+      showToast("No wallet extension detected. Scan the QR code or copy the address to pay manually.", "info");
       return;
     }
     if (!ethersLib) {
-      setCryptoPayError("Crypto library not loaded. Please refresh the page.");
+      showToast("Crypto library not loaded. Please refresh the page.", "error");
       setCryptoPayStatus("error");
       return;
     }
@@ -1777,24 +1781,22 @@ export default function App() {
   }
 
   // SOL payment — Phantom wallet
+  // SOL — Phantom wallet connect (optional fast path from waiting state)
   async function connectPhantomAndPay() {
     if (!paymentScreen) return;
     const solanaWeb3 = (window as any).solanaWeb3;
     const phantom = (window as any).phantom?.solana || (window as any).solana;
 
     if (!phantom?.isPhantom) {
-      setCryptoPayError("Phantom wallet not detected. Please install Phantom to pay with SOL.");
-      setCryptoPayStatus("error");
+      showToast("Phantom wallet not detected. Scan the QR code or copy the address to pay manually.", "info");
       return;
     }
     if (!solanaWeb3) {
-      setCryptoPayError("Solana library not loaded. Please refresh the page.");
-      setCryptoPayStatus("error");
+      showToast("Solana library not loaded. Please refresh the page.", "error");
       return;
     }
     if (!merchantAddresses.sol) {
-      setCryptoPayError("Merchant SOL address not configured. Please contact the seller.");
-      setCryptoPayStatus("error");
+      showToast("Merchant SOL address not configured.", "error");
       return;
     }
 
@@ -1990,12 +1992,81 @@ export default function App() {
     btcPollingRef.current = pollInterval;
   }
 
-  // Unified crypto pay dispatcher
+  // BSC QR + auto-verify (USDT / BNB)
+  async function startBscPayment() {
+    if (!paymentScreen) return;
+    if (!merchantAddresses.bsc) { setCryptoPayError("Merchant BSC address not configured."); setCryptoPayStatus("error"); return; }
+    setCryptoPayError("");
+    setCryptoPayStatus("waiting");
+    await generateQr(merchantAddresses.bsc);
+
+    let initialBlockNum = 0;
+    try {
+      const res = await fetch(`https://api.bscscan.com/api?module=account&action=txlist&address=${merchantAddresses.bsc}&page=1&offset=1&sort=desc`);
+      if (res.ok) { const data = await res.json(); if (Array.isArray(data.result) && data.result.length > 0) initialBlockNum = parseInt(data.result[0].blockNumber) || 0; }
+    } catch {}
+
+    if (btcPollingRef.current) clearInterval(btcPollingRef.current);
+    btcPollingRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`https://api.bscscan.com/api?module=account&action=txlist&address=${merchantAddresses.bsc}&page=1&offset=5&sort=desc`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data.result) && data.result.length > 0) {
+          const latest = data.result[0];
+          const txTime = parseInt(latest.timeStamp) * 1000;
+          if (Date.now() - txTime < 300000 && (initialBlockNum === 0 || parseInt(latest.blockNumber) > initialBlockNum)) {
+            clearInterval(btcPollingRef.current);
+            btcPollingRef.current = null;
+            setCryptoPayStatus("done");
+            handlePaymentConfirmed(latest.hash || "bsc-confirmed");
+          }
+        }
+      } catch {}
+    }, 12000);
+  }
+
+  // SOL QR + auto-verify
+  async function startSolPayment() {
+    if (!paymentScreen) return;
+    if (!merchantAddresses.sol) { setCryptoPayError("Merchant SOL address not configured."); setCryptoPayStatus("error"); return; }
+    setCryptoPayError("");
+    setCryptoPayStatus("waiting");
+    await generateQr(merchantAddresses.sol);
+
+    const solanaWeb3 = (window as any).solanaWeb3;
+    if (!solanaWeb3) return;
+
+    let lastSig = "";
+    try {
+      const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
+      const pk = new solanaWeb3.PublicKey(merchantAddresses.sol);
+      const sigs = await conn.getSignaturesForAddress(pk, { limit: 1 });
+      if (sigs.length > 0) lastSig = sigs[0].signature;
+    } catch {}
+
+    if (btcPollingRef.current) clearInterval(btcPollingRef.current);
+    btcPollingRef.current = setInterval(async () => {
+      try {
+        const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
+        const pk = new solanaWeb3.PublicKey(merchantAddresses.sol);
+        const sigs = await conn.getSignaturesForAddress(pk, { limit: 1 });
+        if (sigs.length > 0 && sigs[0].signature !== lastSig) {
+          clearInterval(btcPollingRef.current);
+          btcPollingRef.current = null;
+          setCryptoPayStatus("done");
+          handlePaymentConfirmed(sigs[0].signature);
+        }
+      } catch {}
+    }, 10000);
+  }
+
+  // Unified crypto pay dispatcher — always shows QR + address + starts auto-verify
   function initiateCryptoPay() {
     if (cryptoTokenChoice === "USDT" || cryptoTokenChoice === "BNB") {
-      connectWalletAndPay();
+      startBscPayment();
     } else if (cryptoTokenChoice === "SOL") {
-      connectPhantomAndPay();
+      startSolPayment();
     } else if (cryptoTokenChoice === "BTC") {
       startBtcPayment();
     } else if (cryptoTokenChoice === "XRP") {
@@ -3723,13 +3794,29 @@ export default function App() {
                 <div style={{ background: "var(--bg-accent-subtle)", borderRadius: 12, padding: 16, marginBottom: 16 }}>
                   <div style={{ fontSize: 13, color: V.textMuted, marginBottom: 4 }}>Order Total</div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: V.primary }}>₦{paymentScreen.order.total.toLocaleString()}</div>
-                  <div style={{ fontSize: 14, color: V.success, fontWeight: 600, marginTop: 4 }}>
-                    ≈ {getCryptoAmount(paymentScreen.order.total, cryptoTokenChoice).amount} {cryptoTokenChoice}
-                  </div>
-                  <div style={{ fontSize: 11, color: V.textMuted, marginTop: 4 }}>
-                    Rate: $1 ≈ ₦{NGN_USD_RATE.toLocaleString()}
-                    {livePrices.lastUpdated && ` • Updated ${livePrices.lastUpdated}`}
-                  </div>
+                  {(() => {
+                    const ci = getCryptoAmount(paymentScreen.order.total, cryptoTokenChoice);
+                    return <>
+                      <div style={{ fontSize: 14, color: ci.priceLoaded ? V.success : V.textMuted, fontWeight: 600, marginTop: 4 }}>
+                        {ci.priceLoaded ? `≈ ${ci.amount} ${cryptoTokenChoice}` : `⏳ Loading ${cryptoTokenChoice} price...`}
+                      </div>
+                      {ci.priceLoaded && cryptoTokenChoice !== "USDT" && (
+                        <div style={{ fontSize: 12, color: V.textMuted, marginTop: 2 }}>
+                          ≈ ${ci.usd.toFixed(2)} USD • 1 {cryptoTokenChoice} = ${ci.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 11, color: V.textMuted, marginTop: 4, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, flexWrap: "wrap" as const }}>
+                        <span>Rate: $1 ≈ ₦{NGN_USD_RATE.toLocaleString()}</span>
+                        {livePrices.lastUpdated && <span>• Prices updated {livePrices.lastUpdated}</span>}
+                        <button onClick={async () => {
+                          try {
+                            const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=binancecoin,tether,solana,ripple,bitcoin&vs_currencies=usd");
+                            if (res.ok) { const data = await res.json(); setLivePrices({ bnb: data.binancecoin?.usd || 0, usdt: data.tether?.usd || 1, sol: data.solana?.usd || 0, btc: data.bitcoin?.usd || 0, xrp: data.ripple?.usd || 0, lastUpdated: new Date().toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" }) }); showToast("Prices refreshed!", "success"); }
+                          } catch { showToast("Could not refresh prices", "error"); }
+                        }} style={{ background: "none", border: `1px solid ${V.border}`, borderRadius: 6, padding: "2px 6px", fontSize: 10, cursor: "pointer", color: V.primary, fontWeight: 600 }}>🔄 Refresh</button>
+                      </div>
+                    </>;
+                  })()}
                 </div>
 
                 {/* Token selection — grouped by chain */}
@@ -3761,12 +3848,12 @@ export default function App() {
                 {/* Chain badge */}
                 {(cryptoTokenChoice === "USDT" || cryptoTokenChoice === "BNB") && (
                   <div style={{ background: "#F0B90B22", border: "1px solid #F0B90B55", borderRadius: 8, padding: "6px 12px", marginBottom: 16, fontSize: 12, fontWeight: 600, color: "#F0B90B" }}>
-                    ⛓️ BNB Smart Chain (BSC) • Wallet Connect
+                    ⛓️ BNB Smart Chain (BSC) • QR / Wallet Connect
                   </div>
                 )}
                 {cryptoTokenChoice === "SOL" && (
                   <div style={{ background: "#9945FF22", border: "1px solid #9945FF55", borderRadius: 8, padding: "6px 12px", marginBottom: 16, fontSize: 12, fontWeight: 600, color: "#9945FF" }}>
-                    ◎ Solana • Phantom Wallet
+                    ◎ Solana • QR / Phantom Wallet
                   </div>
                 )}
                 {cryptoTokenChoice === "BTC" && (
@@ -3780,31 +3867,52 @@ export default function App() {
                   </div>
                 )}
 
-                {/* QR Code display for BTC/XRP when waiting */}
-                {cryptoPayStatus === "waiting" && (cryptoTokenChoice === "BTC" || cryptoTokenChoice === "XRP") && (
+                {/* QR Code + Address display for ALL tokens when waiting */}
+                {cryptoPayStatus === "waiting" && (
                   <div style={{ background: V.bgSecondary, borderRadius: 12, padding: 20, marginBottom: 16, textAlign: "center" as const }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: V.text, marginBottom: 8 }}>
                       Send exactly {getCryptoAmount(paymentScreen.order.total, cryptoTokenChoice).amount} {cryptoTokenChoice}
                     </div>
-                    {cryptoQrDataUrl && <img src={cryptoQrDataUrl} alt="Payment QR" style={{ width: 200, height: 200, margin: "0 auto 12px", display: "block", borderRadius: 8, border: `4px solid #fff` }} />}
+                    {cryptoQrDataUrl && <img src={cryptoQrDataUrl} alt="Payment QR" style={{ width: 200, height: 200, margin: "0 auto 12px", display: "block", borderRadius: 8, border: "4px solid #fff" }} />}
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
                       <div style={{ fontSize: 12, color: V.textMuted, wordBreak: "break-all" as const, fontFamily: "monospace", background: V.bg, padding: "8px 12px", borderRadius: 8, border: `1px solid ${V.border}`, width: "100%" }}>
-                        {cryptoTokenChoice === "BTC" ? merchantAddresses.btc : merchantAddresses.xrp}
+                        {(cryptoTokenChoice === "USDT" || cryptoTokenChoice === "BNB") ? merchantAddresses.bsc : cryptoTokenChoice === "SOL" ? merchantAddresses.sol : cryptoTokenChoice === "BTC" ? merchantAddresses.btc : merchantAddresses.xrp}
                         {cryptoTokenChoice === "XRP" && merchantAddresses.xrpTag && <div style={{ marginTop: 4, color: V.primary, fontWeight: 600 }}>Tag: {merchantAddresses.xrpTag}</div>}
+                        {(cryptoTokenChoice === "USDT" || cryptoTokenChoice === "BNB") && <div style={{ marginTop: 4, color: "#F0B90B", fontWeight: 600, fontSize: 11 }}>Network: BNB Smart Chain (BEP-20)</div>}
+                        {cryptoTokenChoice === "SOL" && <div style={{ marginTop: 4, color: "#9945FF", fontWeight: 600, fontSize: 11 }}>Network: Solana Mainnet</div>}
                       </div>
-                      <button onClick={() => { navigator.clipboard.writeText(cryptoTokenChoice === "BTC" ? merchantAddresses.btc : merchantAddresses.xrp); showToast("Address copied!", "success"); }} style={{ background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 600, color: V.text, cursor: "pointer" }}>📋 Copy Address</button>
+                      <button onClick={() => {
+                        const addr = (cryptoTokenChoice === "USDT" || cryptoTokenChoice === "BNB") ? merchantAddresses.bsc : cryptoTokenChoice === "SOL" ? merchantAddresses.sol : cryptoTokenChoice === "BTC" ? merchantAddresses.btc : merchantAddresses.xrp;
+                        navigator.clipboard.writeText(addr); showToast("Address copied!", "success");
+                      }} style={{ background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 600, color: V.text, cursor: "pointer" }}>📋 Copy Address</button>
                     </div>
+
+                    {/* Wallet connect buttons for BSC/SOL (fast pay option) */}
+                    {(cryptoTokenChoice === "USDT" || cryptoTokenChoice === "BNB") && (
+                      <button onClick={connectWalletAndPay} style={{ marginTop: 12, background: "linear-gradient(135deg, #F0B90B 0%, #E8A700 100%)", color: "#1a1a1a", border: "none", borderRadius: 10, padding: "10px 20px", fontWeight: 700, fontSize: 13, cursor: "pointer", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                        🦊 Quick Pay via Wallet Extension
+                      </button>
+                    )}
+                    {cryptoTokenChoice === "SOL" && (
+                      <button onClick={connectPhantomAndPay} style={{ marginTop: 12, background: "linear-gradient(135deg, #9945FF 0%, #7B2FE0 100%)", color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", fontWeight: 700, fontSize: 13, cursor: "pointer", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                        👻 Quick Pay via Phantom
+                      </button>
+                    )}
+
                     <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                       <span style={{ animation: "pulse 1.5s infinite", fontSize: 16 }}>⏳</span>
                       <span style={{ fontSize: 13, color: V.primary, fontWeight: 600 }}>Watching for your payment...</span>
                     </div>
                     <div style={{ fontSize: 11, color: V.textMuted, marginTop: 6 }}>
-                      {cryptoTokenChoice === "BTC" ? "Checking mempool every 10s — auto-confirms when detected" : "XRPL WebSocket — instant detection (3-5 seconds)"}
+                      {cryptoTokenChoice === "BTC" ? "Checking mempool every 10s — auto-confirms when detected"
+                        : cryptoTokenChoice === "XRP" ? "XRPL WebSocket — instant detection (3-5 seconds)"
+                        : cryptoTokenChoice === "SOL" ? "Polling Solana every 10s — auto-confirms when detected"
+                        : "Polling BSCScan every 12s — auto-confirms when detected"}
                     </div>
                   </div>
                 )}
 
-                {/* Payment status steps */}
+                {/* Payment status steps (wallet connect flow) */}
                 {cryptoPayStatus !== "idle" && cryptoPayStatus !== "error" && cryptoPayStatus !== "waiting" && (
                   <div style={{ background: V.bgSecondary, borderRadius: 12, padding: 16, marginBottom: 16 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -3837,8 +3945,8 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Done state for BTC/XRP */}
-                {cryptoPayStatus === "done" && (cryptoTokenChoice === "BTC" || cryptoTokenChoice === "XRP") && (
+                {/* Done state for all tokens */}
+                {cryptoPayStatus === "done" && (
                   <div style={{ background: "var(--color-success-bg)", borderRadius: 12, padding: 16, marginBottom: 16, textAlign: "center" as const }}>
                     <div style={{ fontSize: 48, marginBottom: 8 }}>✅</div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: V.success }}>Payment Detected!</div>
@@ -3854,24 +3962,25 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Pay button */}
+                {/* Pay button — shows QR + address + starts auto-verification */}
                 {(cryptoPayStatus === "idle" || cryptoPayStatus === "error") && (
-                  <button onClick={initiateCryptoPay} style={{
-                    background: cryptoTokenChoice === "SOL" ? "linear-gradient(135deg, #9945FF 0%, #7B2FE0 100%)"
+                  <button onClick={initiateCryptoPay} disabled={!getCryptoAmount(paymentScreen.order.total, cryptoTokenChoice).priceLoaded} style={{
+                    background: !getCryptoAmount(paymentScreen.order.total, cryptoTokenChoice).priceLoaded ? "#888"
+                      : cryptoTokenChoice === "SOL" ? "linear-gradient(135deg, #9945FF 0%, #7B2FE0 100%)"
                       : cryptoTokenChoice === "BTC" ? "linear-gradient(135deg, #F7931A 0%, #E68600 100%)"
                       : cryptoTokenChoice === "XRP" ? "linear-gradient(135deg, #23292F 0%, #444 100%)"
                       : "linear-gradient(135deg, #F0B90B 0%, #E8A700 100%)",
-                    color: (cryptoTokenChoice === "BTC" || cryptoTokenChoice === "XRP") ? "#fff" : "#1a1a1a",
-                    border: "none", borderRadius: 12, padding: 14, fontWeight: 700, fontSize: 16, cursor: "pointer", width: "100%", marginBottom: 10, boxShadow: "0 4px 15px rgba(0,0,0,0.2)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8
+                    color: (cryptoTokenChoice === "BTC" || cryptoTokenChoice === "XRP" || !getCryptoAmount(paymentScreen.order.total, cryptoTokenChoice).priceLoaded) ? "#fff" : "#1a1a1a",
+                    border: "none", borderRadius: 12, padding: 14, fontWeight: 700, fontSize: 16, cursor: getCryptoAmount(paymentScreen.order.total, cryptoTokenChoice).priceLoaded ? "pointer" : "not-allowed", width: "100%", marginBottom: 10, boxShadow: "0 4px 15px rgba(0,0,0,0.2)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    opacity: getCryptoAmount(paymentScreen.order.total, cryptoTokenChoice).priceLoaded ? 1 : 0.6
                   }}>
-                    {(cryptoTokenChoice === "USDT" || cryptoTokenChoice === "BNB") ? "🦊 Connect Wallet & Pay" :
-                     cryptoTokenChoice === "SOL" ? "👻 Connect Phantom & Pay" :
-                     `📱 Show QR — Pay ${getCryptoAmount(paymentScreen.order.total, cryptoTokenChoice).amount} ${cryptoTokenChoice}`}
+                    {!getCryptoAmount(paymentScreen.order.total, cryptoTokenChoice).priceLoaded ? "⏳ Loading prices..." :
+                      `📱 Pay ${getCryptoAmount(paymentScreen.order.total, cryptoTokenChoice).amount} ${cryptoTokenChoice}`}
                   </button>
                 )}
 
-                {/* Install wallet links */}
-                {(cryptoPayStatus === "idle" || cryptoPayStatus === "error") && (
+                {/* Wallet download links */}
+                {(cryptoPayStatus === "idle" || cryptoPayStatus === "error" || cryptoPayStatus === "waiting") && (
                   <div style={{ background: V.bgSecondary, borderRadius: 10, padding: 14, marginBottom: 10 }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: V.text, marginBottom: 8 }}>
                       {(cryptoTokenChoice === "USDT" || cryptoTokenChoice === "BNB") ? "Need a BSC wallet?" :
