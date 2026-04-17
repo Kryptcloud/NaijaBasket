@@ -849,6 +849,12 @@ export default function App() {
   });
   const [reviewModal, setReviewModal] = useState<{ productId: number; rating: number; comment: string } | null>(null);
 
+  // CRM Order Management state
+  const [crmOrderDetail, setCrmOrderDetail] = useState<Order | null>(null);
+  const [lastKnownOrderCount, setLastKnownOrderCount] = useState(() => {
+    try { return Number(localStorage.getItem("nb_last_order_count") || "0"); } catch { return 0; }
+  });
+
   // Products state (mutable for admin management)
   // Merge brands/imgUrl from INITIAL_PRODUCTS into saved data so localStorage doesn't lose them
   const [products, setProducts] = useState<Product[]>(() => {
@@ -967,19 +973,26 @@ export default function App() {
             const idx = merged.findIndex(lo => lo.id === ro.id);
             if (idx === -1) merged.push(ro);
             else {
-              // Keep whichever was updated more recently
               const remoteTime = new Date(ro.syncedAt || ro.date).getTime();
               const localTime = new Date(merged[idx].syncedAt || merged[idx].date).getTime();
               if (remoteTime > localTime) merged[idx] = ro;
             }
           }
           merged.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          // New order alert
+          if (merged.length > lastKnownOrderCount && lastKnownOrderCount > 0) {
+            const newCount = merged.length - lastKnownOrderCount;
+            showToast(`🔔 ${newCount} new order${newCount > 1 ? "s" : ""} received!`, "success");
+            try { new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGczIj2markup").play().catch(() => {}); } catch {}
+          }
+          setLastKnownOrderCount(merged.length);
+          localStorage.setItem("nb_last_order_count", String(merged.length));
           return merged;
         });
       }
     };
     fetchOrders();
-    const interval = setInterval(fetchOrders, 15000); // Poll every 15s
+    const interval = setInterval(fetchOrders, 15000);
     return () => { cancelled = true; clearInterval(interval); };
   }, [adminAuth]);
 
@@ -1155,15 +1168,77 @@ export default function App() {
   const handleGoogleLogin = async () => {
     setAuthError("");
     setAuthLoading(true);
-    // Client-side Google mock — in production, integrate Google Identity Services
-    const mockEmail = `user${Date.now()}@gmail.com`;
-    const mockName = "Google User";
-    const user = { id: `g_${Date.now()}`, name: mockName, email: mockEmail, phone: "" };
-    setCurrentUser({ ...user, emailVerified: true, phoneVerified: false, loyaltyPoints: 0, referralCode: generateReferralCode(mockName) });
-    setUserToken(`tok_${Date.now()}`);
-    setEmailVerified(true);
-    setAuthStep("add-phone");
-    setAuthLoading(false);
+    try {
+      const google = (window as any).google;
+      if (!google?.accounts?.id) {
+        setAuthError("Google Sign-In not loaded. Please refresh the page.");
+        setAuthLoading(false);
+        return;
+      }
+      google.accounts.id.initialize({
+        client_id: "109103143371-h1imltid1g43ijon690qnsjhl5jt5eoa.apps.googleusercontent.com",
+        callback: (response: any) => {
+          try {
+            // Decode the JWT credential
+            const payload = JSON.parse(atob(response.credential.split(".")[1]));
+            const email = payload.email || "";
+            const name = payload.name || payload.given_name || "Google User";
+            const picture = payload.picture || "";
+            // Check if user already exists in registry
+            const registry: UserAccount[] = JSON.parse(localStorage.getItem("nb_registered_users") || "[]");
+            const existing = registry.find(u => u.email.toLowerCase() === email.toLowerCase());
+            if (existing) {
+              // Returning user — log them in directly
+              setCurrentUser({ ...existing, emailVerified: true, avatar: picture || existing.avatar });
+              setUserToken(`tok_${Date.now()}`);
+              setEmailVerified(true);
+              if (existing.phoneVerified && existing.phone) {
+                // Fully verified — complete login
+                setPhoneVerified(true);
+                const updated = { ...existing, emailVerified: true, avatar: picture || existing.avatar };
+                const idx = registry.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+                if (idx >= 0) registry[idx] = updated;
+                localStorage.setItem("nb_registered_users", JSON.stringify(registry));
+                showToast(`Welcome back, ${name}! 🎉`, "success");
+                const pending = pendingCartAction;
+                resetAuthModal();
+                if (pending) {
+                  if (pending.type === "single") doAddToCart(pending.productId, pending.variantId);
+                  else doAddPackageToCart(pending.pkg, pending.items);
+                  setPendingCartAction(null);
+                }
+              } else {
+                // Need phone verification
+                setAuthStep("add-phone");
+              }
+            } else {
+              // New user — create account, ask for phone
+              const user = { id: `g_${Date.now()}`, name, email, phone: "" };
+              setCurrentUser({ ...user, emailVerified: true, phoneVerified: false, loyaltyPoints: 0, referralCode: generateReferralCode(name), avatar: picture });
+              setUserToken(`tok_${Date.now()}`);
+              setEmailVerified(true);
+              setAuthStep("add-phone");
+            }
+          } catch (err) {
+            setAuthError("Failed to process Google sign-in. Please try again.");
+          }
+          setAuthLoading(false);
+        },
+      });
+      google.accounts.id.prompt((notification: any) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          // One Tap not available — fall back to button-style popup
+          google.accounts.id.renderButton(
+            document.getElementById("nb-google-btn-container"),
+            { theme: "outline", size: "large", width: "100%", text: "continue_with" }
+          );
+          setAuthLoading(false);
+        }
+      });
+    } catch (err) {
+      setAuthError("Google Sign-In failed. Please try again.");
+      setAuthLoading(false);
+    }
   };
 
   const sendOtp = async (channel: "email" | "phone", value: string) => {
@@ -1485,11 +1560,40 @@ export default function App() {
     setProcessing(false);
   }
 
-  // Send order details to WhatsApp
+  // Send order receipt PNG to WhatsApp
   function sendOrderWhatsApp(order: Order) {
     const items = order.items.map(i => `• ${i.name} (${i.variant}) ×${i.quantity} = ₦${i.total.toLocaleString()}`).join("\n");
     const msg = `🧺 *NEW ORDER — NaijaBasket*\n\nOrder: ${order.id}\nCustomer: ${order.customer.name}\nPhone: ${order.customer.phone}\nAddress: ${order.customer.address}\n\n${items}\n\nSubtotal: ₦${order.subtotal.toLocaleString()}\nDelivery: ${order.deliveryFee === 0 ? "FREE" : `₦${order.deliveryFee.toLocaleString()}`}${order.deliveryType === "same-day" ? " (Same-Day ⚡)" : ""}\n*Total: ₦${order.total.toLocaleString()}*\nPayment: ${order.paymentMethod === "naira" ? "Paystack" : "Crypto"} — ${order.status}`;
-    window.open(`https://wa.me/2348159242986?text=${encodeURIComponent(msg)}`, "_blank");
+
+    // Generate PNG receipt canvas (same as downloadReceipt)
+    const receiptCanvas = generateReceiptCanvas(order);
+    receiptCanvas.toBlob(async (blob) => {
+      if (!blob) {
+        // Fallback to text-only
+        window.open(`https://wa.me/2348159242986?text=${encodeURIComponent(msg)}`, "_blank");
+        return;
+      }
+      const file = new File([blob], `NaijaBasket-Receipt-${order.id}.png`, { type: "image/png" });
+      // Try Web Share API (works on mobile and modern browsers)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ text: msg, files: [file] });
+          showToast("Receipt shared successfully! 🎉", "success");
+          return;
+        } catch (e: any) {
+          if (e.name === "AbortError") return; // User cancelled
+        }
+      }
+      // Fallback: download the PNG first, then open WhatsApp with text
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `NaijaBasket-Receipt-${order.id}.png`; a.click();
+      URL.revokeObjectURL(url);
+      showToast("Receipt downloaded! Attach it in WhatsApp 📎", "info");
+      setTimeout(() => {
+        window.open(`https://wa.me/2348159242986?text=${encodeURIComponent(msg)}`, "_blank");
+      }, 500);
+    }, "image/png");
   }
 
   function handlePaymentConfirmed(txHash?: string) {
@@ -1579,8 +1683,8 @@ export default function App() {
   }
 
   // ===== RECEIPT (PNG) =====
-  function downloadReceipt(order: Order) {
-    const W = 600, PAD = 40, LINE = 22;
+  function generateReceiptCanvas(order: Order): HTMLCanvasElement {
+    const W = 600, PAD = 40;
     const items = order.items;
     const rowCount = items.length;
     const H = 520 + rowCount * 28;
@@ -1719,7 +1823,11 @@ export default function App() {
     ctx.font = "12px Arial, sans-serif"; ctx.fillStyle = "#bbf7d0";
     ctx.fillText("WhatsApp: +234 815 924 2986", W / 2, y + 38);
 
-    // Download
+    return canvas;
+  }
+
+  function downloadReceipt(order: Order) {
+    const canvas = generateReceiptCanvas(order);
     canvas.toBlob(blob => {
       if (!blob) return;
       const url = URL.createObjectURL(blob);
@@ -2331,7 +2439,7 @@ export default function App() {
               { key: "stats", label: "📊 Sales" },
               { key: "accounting", label: "📈 Accounting" },
               { key: "inventory", label: "📦 Inventory" },
-              { key: "crm", label: "👥 CRM" },
+              { key: "crm", label: `📦 Orders${(() => { const p = orders.filter(o => o.deliveryStatus !== "delivered").length; return p > 0 ? ` (${p})` : ""; })()} ` },
               { key: "messages", label: `💬 Messages${totalUnread > 0 ? ` (${totalUnread})` : ""}` },
               { key: "audit", label: "🔍 Audit" },
               { key: "settings", label: "⚙️ Settings" },
@@ -2728,29 +2836,153 @@ export default function App() {
             </div>
           )}
 
-          {/* ===== CRM TAB ===== */}
+          {/* ===== CRM / ORDER MANAGEMENT TAB ===== */}
           {adminView === "crm" && (
             <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: V.primary, marginBottom: 16 }}>👥 Customer Management</h3>
-              {(() => {
-                const stats: Record<string, { name: string; phone: string; address: string; purchases: number; totalSpent: number; lastOrder: string }> = {};
-                orders.forEach(o => { const key = o.customer.phone; if (!stats[key]) stats[key] = { name: o.customer.name, phone: o.customer.phone, address: o.customer.address, purchases: 0, totalSpent: 0, lastOrder: "" }; stats[key].purchases += 1; stats[key].totalSpent += o.total; stats[key].lastOrder = o.date; });
-                const list = Object.values(stats).sort((a, b) => b.totalSpent - a.totalSpent);
-                return list.length === 0 ? <p style={{ color: V.textMuted, textAlign: "center", padding: "40px 0" }}>No customers yet</p> : (
-                  <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as any }}>
-                    <table className="nb-crm-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 600 }}>
-                      <thead><tr>{["Name", "Phone", "Orders", "Total Spent", "Last Order"].map(h => <th key={h} style={{ background: "var(--bg-accent-subtle)", padding: "12px 10px", textAlign: "left", fontWeight: 700, color: V.primary, fontSize: 12 }}>{h}</th>)}</tr></thead>
-                      <tbody>{list.map((c, idx) => (
-                        <tr key={idx}>
-                          <td style={{ padding: "12px 10px", borderBottom: `1px solid ${V.borderSubtle}`, fontWeight: 600 }}>{c.name}</td>
-                          <td style={{ padding: "12px 10px", borderBottom: `1px solid ${V.borderSubtle}`, color: V.textMuted, fontSize: 13 }}>{c.phone}</td>
-                          <td style={{ padding: "12px 10px", borderBottom: `1px solid ${V.borderSubtle}`, fontWeight: 700, color: V.success }}>{c.purchases}</td>
-                          <td style={{ padding: "12px 10px", borderBottom: `1px solid ${V.borderSubtle}`, fontWeight: 700, color: V.primary }}>₦{c.totalSpent.toLocaleString()}</td>
-                          <td style={{ padding: "12px 10px", borderBottom: `1px solid ${V.borderSubtle}`, color: V.textMuted, fontSize: 12 }}>{new Date(c.lastOrder).toLocaleDateString()}</td>
-                        </tr>
-                      ))}</tbody>
-                    </table>
+              {/* Order Detail Modal */}
+              {crmOrderDetail && (
+                <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}>
+                  <div style={{ background: V.bgCard, borderRadius: 16, boxShadow: "var(--shadow-lg)", width: "90%", maxWidth: 520, maxHeight: "85vh", overflowY: "auto", padding: 28, position: "relative", border: `1px solid ${V.border}` }}>
+                    <button onClick={() => setCrmOrderDetail(null)} style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", fontSize: 20, cursor: "pointer", color: V.textMuted }}>✕</button>
+                    <h3 style={{ fontSize: 18, fontWeight: 700, color: V.primary, marginBottom: 4 }}>📋 Order Details</h3>
+                    <p style={{ fontSize: 12, color: V.textMuted, marginBottom: 16 }}>#{crmOrderDetail.id} • {new Date(crmOrderDetail.date).toLocaleDateString("en-NG", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                    
+                    {/* Customer */}
+                    <div style={{ background: V.bgSecondary, borderRadius: 10, padding: 14, marginBottom: 14 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: V.textMuted, textTransform: "uppercase", marginBottom: 8 }}>Customer</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: V.text }}>{crmOrderDetail.customer.name}</div>
+                      <div style={{ fontSize: 13, color: V.textMuted, marginTop: 4 }}>📞 {crmOrderDetail.customer.phone}</div>
+                      <div style={{ fontSize: 13, color: V.textMuted, marginTop: 2 }}>📧 {crmOrderDetail.customer.email}</div>
+                      <div style={{ fontSize: 13, color: V.textMuted, marginTop: 2 }}>📍 {crmOrderDetail.customer.address}</div>
+                    </div>
+
+                    {/* Items */}
+                    <div style={{ background: V.bgSecondary, borderRadius: 10, padding: 14, marginBottom: 14 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: V.textMuted, textTransform: "uppercase", marginBottom: 8 }}>Items Ordered ({crmOrderDetail.items.length})</div>
+                      {crmOrderDetail.items.map((item, i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < crmOrderDetail.items.length - 1 ? `1px solid ${V.borderSubtle}` : "none" }}>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: V.text }}>{item.name}</div>
+                            <div style={{ fontSize: 12, color: V.textMuted }}>{item.variant} × {item.quantity}</div>
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: V.primary }}>₦{item.total.toLocaleString()}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Totals */}
+                    <div style={{ background: V.bgSecondary, borderRadius: 10, padding: 14, marginBottom: 14 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}><span style={{ color: V.textMuted }}>Subtotal</span><span style={{ color: V.text }}>₦{crmOrderDetail.subtotal.toLocaleString()}</span></div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}><span style={{ color: V.textMuted }}>Delivery{crmOrderDetail.deliveryType === "same-day" ? " (Same-Day ⚡)" : ""}</span><span style={{ color: V.text }}>{crmOrderDetail.deliveryFee === 0 ? "FREE" : `₦${crmOrderDetail.deliveryFee.toLocaleString()}`}</span></div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 700, borderTop: `1px solid ${V.border}`, paddingTop: 8, marginTop: 4 }}><span style={{ color: V.primary }}>Total</span><span style={{ color: V.primary }}>₦{crmOrderDetail.total.toLocaleString()}</span></div>
+                    </div>
+
+                    {/* Payment & Status */}
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, marginBottom: 14 }}>
+                      <span style={{ background: crmOrderDetail.status === "paid" ? "var(--color-success-bg)" : "var(--color-warning-bg)", color: crmOrderDetail.status === "paid" ? V.success : V.warning, padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>💳 {crmOrderDetail.paymentMethod === "naira" ? "Paystack" : "Crypto"} — {crmOrderDetail.status.toUpperCase()}</span>
+                      <span style={{ background: crmOrderDetail.deliveryStatus === "delivered" ? "var(--color-success-bg)" : "var(--color-info-bg)", color: crmOrderDetail.deliveryStatus === "delivered" ? V.success : V.accent, padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>🚚 {crmOrderDetail.deliveryStatus.replace("_", " ").toUpperCase()}</span>
+                    </div>
+                    {crmOrderDetail.paymentRef && <div style={{ fontSize: 12, color: V.textMuted, marginBottom: 4 }}>Ref: {crmOrderDetail.paymentRef}</div>}
+
+                    {/* Actions */}
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                      {crmOrderDetail.deliveryStatus !== "delivered" && (
+                        <button onClick={() => {
+                          setOrders(prev => prev.map(o => o.id === crmOrderDetail.id ? { ...o, deliveryStatus: "delivered" } : o));
+                          apiFetch(`/api/orders/${crmOrderDetail.id}`, { method: "PATCH", body: JSON.stringify({ deliveryStatus: "delivered" }) });
+                          showToast(`Order ${crmOrderDetail.id} marked as delivered ✅`, "success");
+                          setCrmOrderDetail(prev => prev ? { ...prev, deliveryStatus: "delivered" } : null);
+                        }} style={{ flex: 1, background: V.success, color: "#fff", border: "none", borderRadius: 10, padding: "12px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>✅ Mark Delivered</button>
+                      )}
+                      <button onClick={() => downloadReceipt(crmOrderDetail)} style={{ flex: 1, background: "var(--bg-accent-subtle)", color: V.primary, border: "none", borderRadius: 10, padding: "12px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>📄 Receipt</button>
+                      <a href={`tel:${crmOrderDetail.customer.phone}`} style={{ flex: 1, background: V.bgSecondary, color: V.text, border: `1px solid ${V.border}`, borderRadius: 10, padding: "12px", fontWeight: 600, fontSize: 13, textAlign: "center", textDecoration: "none", cursor: "pointer" }}>📞 Call</a>
+                    </div>
                   </div>
+                </div>
+              )}
+
+              {/* Pending Delivery Section */}
+              {(() => {
+                const pendingOrders = orders.filter(o => o.deliveryStatus !== "delivered");
+                const deliveredOrders = orders.filter(o => o.deliveryStatus === "delivered");
+                return (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                      <h3 style={{ fontSize: 18, fontWeight: 700, color: V.primary, margin: 0 }}>📦 Orders to Deliver <span style={{ background: pendingOrders.length > 0 ? V.danger : V.success, color: "#fff", borderRadius: 12, padding: "2px 10px", fontSize: 13, marginLeft: 8 }}>{pendingOrders.length}</span></h3>
+                    </div>
+
+                    {pendingOrders.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: "40px 0", color: V.textMuted }}>
+                        <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
+                        <p style={{ fontSize: 15 }}>All orders delivered! No pending deliveries.</p>
+                      </div>
+                    ) : (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 12, marginBottom: 28 }}>
+                        {pendingOrders.map(o => (
+                          <div key={o.id} onClick={() => setCrmOrderDetail(o)} style={{ background: V.bgCard, border: `1px solid ${V.border}`, borderRadius: 14, padding: 16, cursor: "pointer", transition: "all 0.15s", position: "relative" }}>
+                            {/* Status badge */}
+                            <div style={{ position: "absolute", top: 12, right: 12 }}>
+                              <span style={{ background: o.deliveryStatus === "preparing" ? "var(--color-warning-bg)" : o.deliveryStatus === "dispatched" || o.deliveryStatus === "in_transit" ? "var(--color-info-bg)" : "var(--color-success-bg)", color: o.deliveryStatus === "preparing" ? V.warning : o.deliveryStatus === "dispatched" || o.deliveryStatus === "in_transit" ? V.accent : V.success, padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700 }}>{o.deliveryStatus.replace("_", " ")}</span>
+                            </div>
+                            
+                            <div style={{ fontSize: 11, color: V.textMuted, marginBottom: 4 }}>#{o.id}</div>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: V.text, marginBottom: 2 }}>{o.customer.name}</div>
+                            <div style={{ fontSize: 12, color: V.textMuted, marginBottom: 8 }}>📞 {o.customer.phone} • 📍 {o.customer.address}</div>
+                            
+                            {/* Items preview */}
+                            <div style={{ fontSize: 12, color: V.textSecondary, marginBottom: 8 }}>
+                              {o.items.slice(0, 3).map((item, i) => (
+                                <div key={i} style={{ marginBottom: 2 }}>• {item.name} ({item.variant}) ×{item.quantity}</div>
+                              ))}
+                              {o.items.length > 3 && <div style={{ color: V.primary, fontWeight: 600 }}>+{o.items.length - 3} more items</div>}
+                            </div>
+
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `1px solid ${V.borderSubtle}`, paddingTop: 8 }}>
+                              <span style={{ fontSize: 16, fontWeight: 800, color: V.primary }}>₦{o.total.toLocaleString()}</span>
+                              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                                <span style={{ background: o.status === "paid" ? "var(--color-success-bg)" : "var(--color-warning-bg)", color: o.status === "paid" ? V.success : V.warning, padding: "2px 6px", borderRadius: 4, fontSize: 10, fontWeight: 600 }}>{o.status}</span>
+                                <span style={{ fontSize: 11, color: V.textMuted }}>{new Date(o.date).toLocaleDateString("en-NG", { day: "2-digit", month: "short" })}</span>
+                              </div>
+                            </div>
+
+                            {/* Quick actions */}
+                            <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+                              <button onClick={(e) => { e.stopPropagation(); setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, deliveryStatus: "delivered" } : ord)); apiFetch(`/api/orders/${o.id}`, { method: "PATCH", body: JSON.stringify({ deliveryStatus: "delivered" }) }); showToast(`Order ${o.id} delivered ✅`, "success"); }} style={{ flex: 1, background: V.success, color: "#fff", border: "none", borderRadius: 8, padding: "8px", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>✅ Delivered</button>
+                              <select value={o.deliveryStatus} onClick={(e) => e.stopPropagation()} onChange={(e) => { const ns = e.target.value; setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, deliveryStatus: ns } : ord)); apiFetch(`/api/orders/${o.id}`, { method: "PATCH", body: JSON.stringify({ deliveryStatus: ns }) }); showToast(`Order ${o.id} → ${ns.replace("_", " ")}`, "info"); }} style={{ background: V.bg, border: `1px solid ${V.border}`, borderRadius: 8, padding: "8px 6px", fontSize: 11, color: V.text, cursor: "pointer" }}>
+                                {["preparing", "packed", "dispatched", "in_transit"].map(s => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+                              </select>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Delivered Section */}
+                    <div style={{ borderTop: `2px solid ${V.border}`, paddingTop: 20 }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 700, color: V.success, marginBottom: 14 }}>✅ Delivered ({deliveredOrders.length})</h3>
+                      {deliveredOrders.length === 0 ? (
+                        <p style={{ color: V.textMuted, textAlign: "center", padding: "20px 0", fontSize: 13 }}>No deliveries completed yet</p>
+                      ) : (
+                        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as any }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 600 }}>
+                            <thead><tr>{["Order", "Customer", "Items", "Total", "Payment", "Date", ""].map(h => <th key={h} style={{ background: "var(--bg-accent-subtle)", padding: "10px 8px", textAlign: "left", fontWeight: 700, color: V.success, fontSize: 11, borderBottom: `1px solid ${V.border}` }}>{h}</th>)}</tr></thead>
+                            <tbody>{deliveredOrders.slice(0, 20).map(o => (
+                              <tr key={o.id} onClick={() => setCrmOrderDetail(o)} style={{ cursor: "pointer" }}>
+                                <td style={{ padding: "10px 8px", borderBottom: `1px solid ${V.borderSubtle}`, fontSize: 12, fontWeight: 600, color: V.primary }}>#{o.id}</td>
+                                <td style={{ padding: "10px 8px", borderBottom: `1px solid ${V.borderSubtle}`, fontSize: 13 }}>{o.customer.name}</td>
+                                <td style={{ padding: "10px 8px", borderBottom: `1px solid ${V.borderSubtle}`, fontSize: 12, color: V.textMuted }}>{o.items.length} items</td>
+                                <td style={{ padding: "10px 8px", borderBottom: `1px solid ${V.borderSubtle}`, fontSize: 13, fontWeight: 700 }}>₦{o.total.toLocaleString()}</td>
+                                <td style={{ padding: "10px 8px", borderBottom: `1px solid ${V.borderSubtle}`, fontSize: 11 }}><span style={{ background: o.status === "paid" ? "var(--color-success-bg)" : "var(--color-warning-bg)", color: o.status === "paid" ? V.success : V.warning, padding: "2px 6px", borderRadius: 4, fontWeight: 600 }}>{o.status}</span></td>
+                                <td style={{ padding: "10px 8px", borderBottom: `1px solid ${V.borderSubtle}`, fontSize: 12, color: V.textMuted }}>{new Date(o.date).toLocaleDateString("en-NG", { day: "2-digit", month: "short" })}</td>
+                                <td style={{ padding: "10px 8px", borderBottom: `1px solid ${V.borderSubtle}` }}><button onClick={(e) => { e.stopPropagation(); downloadReceipt(o); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>📄</button></td>
+                              </tr>
+                            ))}</tbody>
+                          </table>
+                          {deliveredOrders.length > 20 && <p style={{ fontSize: 12, color: V.textMuted, textAlign: "center", marginTop: 8 }}>Showing 20 of {deliveredOrders.length} delivered orders</p>}
+                        </div>
+                      )}
+                    </div>
+                  </>
                 );
               })()}
             </div>
@@ -3136,8 +3368,10 @@ export default function App() {
                 <p style={{ fontSize: 13, color: V.textMuted, marginBottom: 24, lineHeight: 1.5 }}>Log in or create an account to start shopping.</p>
                 
                 <button onClick={handleGoogleLogin} disabled={authLoading} style={{ width: "100%", padding: "14px 20px", borderRadius: 12, border: `1px solid ${V.border}`, background: V.bgSecondary, color: V.text, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12, opacity: authLoading ? 0.6 : 1 }}>
-                  <span style={{ fontSize: 20 }}>G</span> Continue with Gmail
+                  <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                  Continue with Google
                 </button>
+                <div id="nb-google-btn-container" style={{ width: "100%", marginBottom: 12 }} />
                 
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
                   <div style={{ flex: 1, height: 1, background: V.border }} />
